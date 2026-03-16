@@ -1,8 +1,8 @@
 #pragma once
 
 /* Temperature range and default value in °C. */
-#define UI_TEMP_MIN      0
-#define UI_TEMP_MAX      40
+#define UI_TEMP_MIN      5
+#define UI_TEMP_MAX      30
 #define UI_TEMP_DEFAULT  20
 
 /* Decimal precision of the temperature display.
@@ -12,7 +12,7 @@
 #define UI_TEMP_PREC_HALF    5   /* 0.5 °C per step */
 #define UI_TEMP_PREC_FIFTH   2   /* 0.2 °C per step */
 #define UI_TEMP_PREC_TENTH   1   /* 0.1 °C per step */
-#define UI_TEMP_PRECISION    UI_TEMP_PREC_TENTH
+#define UI_TEMP_PRECISION    UI_TEMP_PREC_HALF
 
 /* Decimal separator character used in the temperature label (',' or '.'). */
 #define UI_TEMP_DECIMAL_SEP  ','
