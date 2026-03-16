@@ -34,7 +34,7 @@ int app_start()
 #ifndef LVGL_LIVE_PREVIEW
     /* Periodically call the lv_task handler.
      * It could be done in a timer interrupt or an OS task too.*/
-    while(1) {
+    while(lv_display_get_default() != NULL) {
         uint32_t sleep_ms = lv_timer_handler();
         if(sleep_ms == LV_NO_TIMER_READY) {
             sleep_ms = LV_DEF_REFR_PERIOD;
