@@ -1,0 +1,18 @@
+{
+    "mainFile": "main.c",
+
+    "_comment": [
+        "LVGL included in the LVGL plug-in for VSCode uses LVGL 9.4.0.",
+        "The version we have included in this repository as a git submodule",
+        "is more recent and hence these two would not be binary compatible.",
+        "The LV_USE_DEMO_MUSIC macro defined above in this JSON is overwritten",
+        "in the plug-in with their lv_conf.h to the default value of 0.",
+        "Hence, we have to manually include all source files of the desired demo",
+        "here to bypass #ifndef guards of the LVGL version included in the plug-in."
+    ],
+    "defines": ["LV_USE_DEMO_MUSIC=1"],
+
+    "dependencies": [
+        "gui/ui.c"
+    ]
+}

@@ -4,12 +4,9 @@
 [submodule "lv_drivers"]
 	path = lv_drivers
 	url = https://github.com/lvgl/lv_drivers
-[submodule "hal/lv_web_emscripten"]
-	path = hal/lv_web_emscripten
+[submodule "vendor/lv_web_emscripten"]
+	path = vendor/lv_web_emscripten
 	url = https://github.com/lvgl/lv_web_emscripten
-[submodule "hal/lv_drivers"]
-	path = hal/lv_drivers
-	url = https://github.com/lvgl/lv_drivers
-[submodule "hal/lv_port_linux"]
-	path = hal/lv_port_linux
+[submodule "vendor/lv_port_linux"]
+	path = vendor/lv_port_linux
 	url = https://github.com/lvgl/lv_port_linux
