@@ -1,5 +1,6 @@
 #include "lvgl.h"
 #include "ui.h"
+#include "battery_charge.h"
 
 static lv_obj_t *bouding_circle_create()
 {
@@ -124,9 +125,22 @@ static void temp_picker_create(lv_obj_t *viewport)
     lv_obj_set_style_text_color(label, UI_FG_COLOR, 0);
 }
 
+static void notification_bar_create(lv_obj_t *viewport)
+{
+    /* Battery / charging status icon sits in the arc gap at the bottom.
+     * The arc bottom edge is at ~284 px; screen bottom at 360 px.
+     * Centre of gap ≈ 322 px from top → offset from BOTTOM_MID = -32. */
+    lv_obj_t * battery = lv_image_create(viewport);
+    lv_image_set_src(battery, &battery_charge_icon);
+    lv_obj_set_style_image_recolor(battery, UI_FG_COLOR, 0);
+    lv_obj_set_style_image_recolor_opa(battery, LV_OPA_COVER, 0);
+    lv_obj_align(battery, LV_ALIGN_BOTTOM_MID, 0, -54);
+}
+
 void ui_init(void)
 {
     lv_obj_t *viewport = bouding_circle_create();
     background_set(viewport);
     temp_picker_create(viewport);
+    notification_bar_create(viewport);
 }
