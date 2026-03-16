@@ -53,6 +53,42 @@ static void background_set(lv_obj_t *viewport)
     lv_obj_add_style(viewport, &style_bg, 0);
 }
 
+/* Total number of arc steps across the full temperature range. */
+static int32_t arc_total_steps(void)
+{
+    return (UI_TEMP_FINE_MIN - UI_TEMP_MIN)      * 10 / UI_TEMP_PREC_NORMAL
+         + (UI_TEMP_FINE_MAX - UI_TEMP_FINE_MIN) * 10 / UI_TEMP_PREC_FINE
+         + (UI_TEMP_MAX      - UI_TEMP_FINE_MAX)  * 10 / UI_TEMP_PREC_NORMAL;
+}
+
+/* Convert an arc step index to temperature in tenths of a degree. */
+static int32_t step_to_tenths(int32_t step)
+{
+    int32_t low_steps  = (UI_TEMP_FINE_MIN - UI_TEMP_MIN)      * 10 / UI_TEMP_PREC_NORMAL;
+    int32_t fine_steps = (UI_TEMP_FINE_MAX - UI_TEMP_FINE_MIN) * 10 / UI_TEMP_PREC_FINE;
+    if(step <= low_steps) {
+        return UI_TEMP_MIN * 10 + step * UI_TEMP_PREC_NORMAL;
+    } else if(step <= low_steps + fine_steps) {
+        return UI_TEMP_FINE_MIN * 10 + (step - low_steps) * UI_TEMP_PREC_FINE;
+    } else {
+        return UI_TEMP_FINE_MAX * 10 + (step - low_steps - fine_steps) * UI_TEMP_PREC_NORMAL;
+    }
+}
+
+/* Convert temperature in tenths to the nearest arc step index. */
+static int32_t tenths_to_step(int32_t tenths)
+{
+    int32_t low_steps  = (UI_TEMP_FINE_MIN - UI_TEMP_MIN)      * 10 / UI_TEMP_PREC_NORMAL;
+    int32_t fine_steps = (UI_TEMP_FINE_MAX - UI_TEMP_FINE_MIN) * 10 / UI_TEMP_PREC_FINE;
+    if(tenths <= UI_TEMP_FINE_MIN * 10) {
+        return (tenths - UI_TEMP_MIN * 10) / UI_TEMP_PREC_NORMAL;
+    } else if(tenths <= UI_TEMP_FINE_MAX * 10) {
+        return low_steps + (tenths - UI_TEMP_FINE_MIN * 10) / UI_TEMP_PREC_FINE;
+    } else {
+        return low_steps + fine_steps + (tenths - UI_TEMP_FINE_MAX * 10) / UI_TEMP_PREC_NORMAL;
+    }
+}
+
 /* Format a temperature value given in tenths of a degree into buf. */
 static void temp_label_format(char * buf, size_t size, int32_t tenths)
 {
@@ -71,9 +107,9 @@ static int32_t temp_label_max_width(void)
 {
     int32_t max_w = 0;
     char buf[24];
-    int32_t steps = (UI_TEMP_MAX - UI_TEMP_MIN) * 10 / UI_TEMP_PRECISION;
+    int32_t steps = arc_total_steps();
     for(int32_t s = 0; s <= steps; s++) {
-        int32_t tenths = UI_TEMP_MIN * 10 + s * UI_TEMP_PRECISION;
+        int32_t tenths = step_to_tenths(s);
         temp_label_format(buf, sizeof(buf), tenths);
         lv_point_t sz;
         lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
@@ -86,7 +122,7 @@ static int32_t temp_label_max_width(void)
 static void temp_label_observer_cb(lv_observer_t * observer, lv_subject_t * subject)
 {
     lv_obj_t * label = lv_observer_get_target_obj(observer);
-    int32_t tenths = UI_TEMP_MIN * 10 + lv_subject_get_int(subject) * UI_TEMP_PRECISION;
+    int32_t tenths = step_to_tenths(lv_subject_get_int(subject));
     char buf[24];
     temp_label_format(buf, sizeof(buf), tenths);
     lv_label_set_text(label, buf);
@@ -95,14 +131,14 @@ static void temp_label_observer_cb(lv_observer_t * observer, lv_subject_t * subj
 static void temp_picker_create(lv_obj_t *viewport)
 {
     static lv_subject_t value;
-    lv_subject_init_int(&value, (UI_TEMP_DEFAULT - UI_TEMP_MIN) * 10 / UI_TEMP_PRECISION);
+    lv_subject_init_int(&value, tenths_to_step(UI_TEMP_DEFAULT * 10));
 
     /* The arced temperature picker. */
     lv_obj_t * arc = lv_arc_create(viewport);
     static const uint8_t dial_scale_perc = 58;
     lv_obj_set_size(arc, LV_HOR_RES * dial_scale_perc / 100, LV_VER_RES * dial_scale_perc / 100);
     lv_obj_center(arc);
-    lv_arc_set_range(arc, 0, (UI_TEMP_MAX - UI_TEMP_MIN) * 10 / UI_TEMP_PRECISION);
+    lv_arc_set_range(arc, 0, arc_total_steps());
     lv_arc_bind_value(arc, &value);
 
     lv_obj_set_style_bg_opa(arc, LV_OPA_TRANSP, 0);

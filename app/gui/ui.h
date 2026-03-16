@@ -1,18 +1,22 @@
 #pragma once
 
 /* Temperature range and default value in °C. */
-#define UI_TEMP_MIN      5
+#define UI_TEMP_MIN      15
 #define UI_TEMP_MAX      30
 #define UI_TEMP_DEFAULT  20
 
-/* Decimal precision of the temperature display.
- * Arc and subject store the temperature as integer steps of UI_TEMP_PRECISION
- * tenths of a degree below the minimum (so actual tenths =
- * UI_TEMP_MIN*10 + step * UI_TEMP_PRECISION). */
-#define UI_TEMP_PREC_HALF    5   /* 0.5 °C per step */
-#define UI_TEMP_PREC_FIFTH   2   /* 0.2 °C per step */
-#define UI_TEMP_PREC_TENTH   1   /* 0.1 °C per step */
-#define UI_TEMP_PRECISION    UI_TEMP_PREC_HALF
+/* Arc step precision.
+ * Named helpers – use these to set the zone precisions below. */
+#define UI_TEMP_PREC_WHOLE   10   /* 1.0 °C per step */
+#define UI_TEMP_PREC_HALF     5   /* 0.5 °C per step */
+#define UI_TEMP_PREC_FIFTH    2   /* 0.2 °C per step */
+#define UI_TEMP_PREC_TENTH    1   /* 0.1 °C per step */
+
+/* Fine-precision zone: higher sensitivity between these temperatures. */
+#define UI_TEMP_FINE_MIN     18   /* °C – lower bound of fine zone */
+#define UI_TEMP_FINE_MAX     27   /* °C – upper bound of fine zone */
+#define UI_TEMP_PREC_NORMAL  UI_TEMP_PREC_WHOLE  /* step size outside the fine zone */
+#define UI_TEMP_PREC_FINE    UI_TEMP_PREC_HALF   /* step size inside  the fine zone */
 
 /* Decimal separator character used in the temperature label (',' or '.'). */
 #define UI_TEMP_DECIMAL_SEP  ','
