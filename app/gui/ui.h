@@ -5,6 +5,21 @@
 #define UI_TEMP_MAX      40
 #define UI_TEMP_DEFAULT  20
 
+/* Decimal precision of the temperature display.
+ * Arc and subject store the temperature as integer steps of UI_TEMP_PRECISION
+ * tenths of a degree below the minimum (so actual tenths =
+ * UI_TEMP_MIN*10 + step * UI_TEMP_PRECISION). */
+#define UI_TEMP_PREC_HALF    5   /* 0.5 °C per step */
+#define UI_TEMP_PREC_FIFTH   2   /* 0.2 °C per step */
+#define UI_TEMP_PREC_TENTH   1   /* 0.1 °C per step */
+#define UI_TEMP_PRECISION    UI_TEMP_PREC_TENTH
+
+/* Decimal separator character used in the temperature label (',' or '.'). */
+#define UI_TEMP_DECIMAL_SEP  ','
+
+/* 1: show decimal fraction in the label; 0: whole degrees only. */
+#define UI_TEMP_SHOW_DECIMALS  1
+
 /* Foreground (text, arc indicator, knob). */
 #define UI_FG_COLOR  lv_color_hex(0xFFFFFF)
 

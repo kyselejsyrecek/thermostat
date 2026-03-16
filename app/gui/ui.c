@@ -52,16 +52,56 @@ static void background_set(lv_obj_t *viewport)
     lv_obj_add_style(viewport, &style_bg, 0);
 }
 
+/* Format a temperature value given in tenths of a degree into buf. */
+static void temp_label_format(char * buf, size_t size, int32_t tenths)
+{
+    int whole = (int)(tenths / 10);
+    int frac  = (int)(tenths % 10);
+#if UI_TEMP_SHOW_DECIMALS
+    lv_snprintf(buf, size, "%d%c%d \xc2\xb0" "C", whole, UI_TEMP_DECIMAL_SEP, frac);
+#else
+    lv_snprintf(buf, size, "%d \xc2\xb0" "C", whole);
+    (void)frac;
+#endif
+}
+
+/* Return the pixel width of the widest possible temperature label string. */
+static int32_t temp_label_max_width(void)
+{
+    int32_t max_w = 0;
+    char buf[24];
+    int32_t steps = (UI_TEMP_MAX - UI_TEMP_MIN) * 10 / UI_TEMP_PRECISION;
+    for(int32_t s = 0; s <= steps; s++) {
+        int32_t tenths = UI_TEMP_MIN * 10 + s * UI_TEMP_PRECISION;
+        temp_label_format(buf, sizeof(buf), tenths);
+        lv_point_t sz;
+        lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        if(sz.x > max_w) max_w = sz.x;
+    }
+    return max_w;
+}
+
+/* Observer callback: updates the label text whenever the subject changes. */
+static void temp_label_observer_cb(lv_observer_t * observer, lv_subject_t * subject)
+{
+    lv_obj_t * label = lv_observer_get_target_obj(observer);
+    int32_t tenths = UI_TEMP_MIN * 10 + lv_subject_get_int(subject) * UI_TEMP_PRECISION;
+    char buf[24];
+    temp_label_format(buf, sizeof(buf), tenths);
+    lv_label_set_text(label, buf);
+}
+
 static void temp_picker_create(lv_obj_t *viewport)
 {
     static lv_subject_t value;
-    lv_subject_init_int(&value, UI_TEMP_DEFAULT);
+    lv_subject_init_int(&value, (UI_TEMP_DEFAULT - UI_TEMP_MIN) * 10 / UI_TEMP_PRECISION);
 
+    /* The arced temperature picker. */
     lv_obj_t * arc = lv_arc_create(viewport);
     static const uint8_t dial_scale_perc = 58;
     lv_obj_set_size(arc, LV_HOR_RES * dial_scale_perc / 100, LV_VER_RES * dial_scale_perc / 100);
     lv_obj_center(arc);
-    lv_arc_set_range(arc, UI_TEMP_MIN, UI_TEMP_MAX);
+    lv_arc_set_range(arc, 0, (UI_TEMP_MAX - UI_TEMP_MIN) * 10 / UI_TEMP_PRECISION);
     lv_arc_bind_value(arc, &value);
 
     lv_obj_set_style_bg_opa(arc, LV_OPA_TRANSP, 0);
@@ -72,13 +112,14 @@ static void temp_picker_create(lv_obj_t *viewport)
     lv_obj_set_style_shadow_opa(arc, LV_OPA_40, LV_PART_KNOB);
     lv_obj_set_style_shadow_offset_y(arc, 5, LV_PART_KNOB);
 
+    /* Value of the temperature picker, drawn in the middle of the arc. */
     lv_obj_t * label = lv_label_create(arc);
+    lv_obj_set_width(label, temp_label_max_width());
 
-    /* Value of the temperature picker, drawn in the middle of the arc.
-     * RIGHT-align: digits grow to the left while "°C" stays fixed on the right. */
+    /* RIGHT-align: digits grow to the left while "°C" stays fixed on the right. */
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_RIGHT, 0);
     lv_obj_center(label);
-    lv_label_bind_text(label, &value, "%d °C");
+    lv_subject_add_observer_obj(&value, temp_label_observer_cb, label, NULL);
     lv_obj_set_style_text_font(label, &UI_FONT, 0);
     lv_obj_set_style_text_color(label, UI_FG_COLOR, 0);
 }
