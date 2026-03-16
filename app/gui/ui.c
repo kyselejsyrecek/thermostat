@@ -6,7 +6,7 @@ void ui_init(void)
     lv_obj_t * screen = lv_obj_create(NULL);
 
     lv_obj_t * btn = lv_btn_create(screen);
-    lv_obj_set_size(btn, 150, 50);
+    lv_obj_set_size(btn, LV_HOR_RES / 2, LV_VER_RES / 8);
     lv_obj_center(btn);
 
     lv_obj_t *label = lv_label_create(screen);

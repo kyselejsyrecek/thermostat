@@ -18,6 +18,7 @@ void lvgl_live_preview_init(void)
 
 int app_start()
 {
+#if 0
     /* Run the default demo */
     /* To try a different demo or example, replace this with one of: */
     /* - lv_demo_benchmark(); */
@@ -25,11 +26,10 @@ int app_start()
     /* - lv_example_label_1(); */
     /* - etc. */
     lv_demo_music();
-
-#if 0
-    // Actually, this is the real application.
-    ui_init();
 #endif
+
+    // The real application UI.
+    ui_init();
 
 #ifndef LVGL_LIVE_PREVIEW
     /* Periodically call the lv_task handler.
