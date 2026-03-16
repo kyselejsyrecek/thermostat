@@ -1,15 +1,17 @@
 #include "lvgl.h"
 #include "ui.h"
 
-void ui_init(void)
+static lv_obj_t *bouding_circle_create()
 {
+    lv_obj_t * circle;
+
     /* Screen background: black outside the circular display area */
     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_black(), 0);
     lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_COVER, 0);
 
     /* Circular container – clips all children to a circle.
      * The gradient is applied here; the screen (corners) stays black. */
-    lv_obj_t * circle = lv_obj_create(lv_screen_active());
+    circle = lv_obj_create(lv_screen_active());
     lv_obj_set_size(circle, LV_HOR_RES, LV_VER_RES);
     lv_obj_center(circle);
     lv_obj_set_style_radius(circle, LV_RADIUS_CIRCLE, 0);
@@ -18,6 +20,11 @@ void ui_init(void)
     lv_obj_set_style_border_width(circle, 0, 0);
     lv_obj_remove_flag(circle, LV_OBJ_FLAG_SCROLLABLE);
 
+    return circle;
+}
+
+static void background_set(lv_obj_t *viewport)
+{
     /* Gradient background: green (bottom-left) -> teal (top-right).
      *
      * LVGL SW renderer uses int32 arithmetic with a fixed-point <<16 shift.
@@ -30,23 +37,29 @@ void ui_init(void)
     lv_style_set_bg_opa(&style_bg, LV_OPA_COVER);
 
     static lv_grad_dsc_t grad;
-    static const lv_color_t grad_colors[2] = {
+    static const lv_color_t grad_colors[3] = {
         UI_GRAD_COLOR_START,
+        UI_GRAD_COLOR_MID,
         UI_GRAD_COLOR_END,
     };
-    lv_grad_init_stops(&grad, grad_colors, NULL, NULL, 2);
+    static const uint8_t grad_fracs[3] = { 0, UI_GRAD_MID_FRAC, 255 };
+    lv_grad_init_stops(&grad, grad_colors, NULL, grad_fracs, 3);
     lv_grad_linear_init(&grad,
                         UI_GRAD_START_X, UI_GRAD_START_Y,
                         UI_GRAD_END_X,   UI_GRAD_END_Y,
                         LV_GRAD_EXTEND_PAD);
     lv_style_set_bg_grad(&style_bg, &grad);
-    lv_obj_add_style(circle, &style_bg, 0);
+    lv_obj_add_style(viewport, &style_bg, 0);
+}
 
+static void temp_picker_create(lv_obj_t *viewport)
+{
     static lv_subject_t value;
     lv_subject_init_int(&value, UI_TEMP_DEFAULT);
 
-    lv_obj_t * arc = lv_arc_create(circle);
-    lv_obj_set_size(arc, LV_HOR_RES * 55 / 100, LV_VER_RES * 55 / 100);
+    lv_obj_t * arc = lv_arc_create(viewport);
+    static const uint8_t dial_scale_perc = 58;
+    lv_obj_set_size(arc, LV_HOR_RES * dial_scale_perc / 100, LV_VER_RES * dial_scale_perc / 100);
     lv_obj_center(arc);
     lv_arc_set_range(arc, UI_TEMP_MIN, UI_TEMP_MAX);
     lv_arc_bind_value(arc, &value);
@@ -61,23 +74,18 @@ void ui_init(void)
 
     lv_obj_t * label = lv_label_create(arc);
 
-    /* Measure the widest rendered string in the range [UI_TEMP_MIN, UI_TEMP_MAX]
-     * so the label box fits exactly and does not shift the display centre. */
-    int32_t max_w = 0;
-    char buf[16];
-    for(int v = UI_TEMP_MIN; v <= UI_TEMP_MAX; v++) {
-        lv_snprintf(buf, sizeof(buf), "%d \xc2\xb0""C", v);   /* "N °C" in UTF-8 */
-        lv_point_t sz;
-        lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX,
-                         LV_TEXT_FLAG_NONE);
-        if(sz.x > max_w) max_w = sz.x;
-    }
-    lv_obj_set_width(label, max_w);
-
-    /* RIGHT-align: digits grow to the left while "°C" stays fixed on the right. */
+    /* Value of the temperature picker, drawn in the middle of the arc.
+     * RIGHT-align: digits grow to the left while "°C" stays fixed on the right. */
     lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_RIGHT, 0);
     lv_obj_center(label);
     lv_label_bind_text(label, &value, "%d °C");
     lv_obj_set_style_text_font(label, &UI_FONT, 0);
     lv_obj_set_style_text_color(label, UI_FG_COLOR, 0);
+}
+
+void ui_init(void)
+{
+    lv_obj_t *viewport = bouding_circle_create();
+    background_set(viewport);
+    temp_picker_create(viewport);
 }
