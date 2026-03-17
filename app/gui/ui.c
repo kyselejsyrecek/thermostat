@@ -89,17 +89,48 @@ static int32_t tenths_to_step(int32_t tenths)
     }
 }
 
+#if UI_TEMP_SHOW_DECIMALS
+
+/* Struct holding the two labels for the split temperature display.
+ * The decimal separator is anchored at the horizontal centre of the arc. */
+typedef struct { lv_obj_t *int_lbl; lv_obj_t *frac_lbl; } TempLabels;
+static TempLabels s_temp_labels;
+
+/* Max pixel width of the integer part across the full temperature range. */
+static int32_t temp_label_max_int_width(void)
+{
+    int32_t max_w = 0;
+    char buf[8];
+    int32_t steps = arc_total_steps();
+    for(int32_t s = 0; s <= steps; s++) {
+        lv_snprintf(buf, sizeof(buf), "%d", (int)(step_to_tenths(s) / 10));
+        lv_point_t sz;
+        lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        if(sz.x > max_w) max_w = sz.x;
+    }
+    return max_w;
+}
+
+/* Max pixel width of the fractional part: separator + digit + " °C". */
+static int32_t temp_label_frac_width(void)
+{
+    int32_t max_w = 0;
+    char buf[16];
+    for(int frac = 0; frac <= 9; frac++) {
+        lv_snprintf(buf, sizeof(buf), "%c%d \xc2\xb0" "C", UI_TEMP_DECIMAL_SEP, frac);
+        lv_point_t sz;
+        lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        if(sz.x > max_w) max_w = sz.x;
+    }
+    return max_w;
+}
+
+#else /* !UI_TEMP_SHOW_DECIMALS */
+
 /* Format a temperature value given in tenths of a degree into buf. */
 static void temp_label_format(char * buf, size_t size, int32_t tenths)
 {
-    int whole = (int)(tenths / 10);
-    int frac  = (int)(tenths % 10);
-#if UI_TEMP_SHOW_DECIMALS
-    lv_snprintf(buf, size, "%d%c%d \xc2\xb0" "C", whole, UI_TEMP_DECIMAL_SEP, frac);
-#else
-    lv_snprintf(buf, size, "%d \xc2\xb0" "C", whole);
-    (void)frac;
-#endif
+    lv_snprintf(buf, size, "%d \xc2\xb0" "C", (int)(tenths / 10));
 }
 
 /* Return the pixel width of the widest possible temperature label string. */
@@ -109,8 +140,7 @@ static int32_t temp_label_max_width(void)
     char buf[24];
     int32_t steps = arc_total_steps();
     for(int32_t s = 0; s <= steps; s++) {
-        int32_t tenths = step_to_tenths(s);
-        temp_label_format(buf, sizeof(buf), tenths);
+        temp_label_format(buf, sizeof(buf), step_to_tenths(s));
         lv_point_t sz;
         lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
         if(sz.x > max_w) max_w = sz.x;
@@ -118,14 +148,25 @@ static int32_t temp_label_max_width(void)
     return max_w;
 }
 
+#endif /* UI_TEMP_SHOW_DECIMALS */
+
 /* Observer callback: updates the label text whenever the subject changes. */
 static void temp_label_observer_cb(lv_observer_t * observer, lv_subject_t * subject)
 {
-    lv_obj_t * label = lv_observer_get_target_obj(observer);
     int32_t tenths = step_to_tenths(lv_subject_get_int(subject));
+#if UI_TEMP_SHOW_DECIMALS
+    (void)observer;
+    char buf[16];
+    lv_snprintf(buf, sizeof(buf), "%d", (int)(tenths / 10));
+    lv_label_set_text(s_temp_labels.int_lbl, buf);
+    lv_snprintf(buf, sizeof(buf), "%c%d \xc2\xb0" "C", UI_TEMP_DECIMAL_SEP, (int)(tenths % 10));
+    lv_label_set_text(s_temp_labels.frac_lbl, buf);
+#else
+    lv_obj_t * label = lv_observer_get_target_obj(observer);
     char buf[24];
     temp_label_format(buf, sizeof(buf), tenths);
     lv_label_set_text(label, buf);
+#endif
 }
 
 static void temp_picker_create(lv_obj_t *viewport)
@@ -149,16 +190,49 @@ static void temp_picker_create(lv_obj_t *viewport)
     lv_obj_set_style_shadow_opa(arc, LV_OPA_40, LV_PART_KNOB);
     lv_obj_set_style_shadow_offset_y(arc, 5, LV_PART_KNOB);
 
-    /* Value of the temperature picker, drawn in the middle of the arc. */
-    lv_obj_t * label = lv_label_create(arc);
-    lv_obj_set_width(label, temp_label_max_width());
+    /* Value of the temperature picker, drawn in the middle of the arc.
+     * The text is split into integer and fractional parts so that the decimal
+     * separator stays fixed at the horizontal centre while digits change. */
+#if UI_TEMP_SHOW_DECIMALS
+    {
+        int32_t int_w  = temp_label_max_int_width();
+        int32_t frac_w = temp_label_frac_width();
 
-    /* RIGHT-align: digits grow to the left while "°C" stays fixed on the right. */
-    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_RIGHT, 0);
-    lv_obj_center(label);
-    lv_subject_add_observer_obj(&value, temp_label_observer_cb, label, NULL);
-    lv_obj_set_style_text_font(label, &UI_FONT, 0);
-    lv_obj_set_style_text_color(label, UI_FG_COLOR, 0);
+        /* Integer part: right-aligned.
+         * Centre of this box is at arc_centre - frac_w/2, so the right edge of
+         * the whole block lands at arc_centre + int_w/2 and the block is centred. */
+        lv_obj_t * label_int = lv_label_create(arc);
+        lv_obj_set_width(label_int, int_w);
+        lv_obj_set_style_text_align(label_int, LV_TEXT_ALIGN_RIGHT, 0);
+        lv_obj_align(label_int, LV_ALIGN_CENTER, -(frac_w / 2), 0);
+        lv_obj_set_style_text_font(label_int, &UI_FONT, 0);
+        lv_obj_set_style_text_color(label_int, UI_FG_COLOR, 0);
+
+        /* Fractional part: left-aligned.
+         * Centre of this box is at arc_centre + int_w/2, so the separator
+         * always starts at the same x and the whole block stays centred. */
+        lv_obj_t * label_frac = lv_label_create(arc);
+        lv_obj_set_width(label_frac, frac_w);
+        lv_obj_set_style_text_align(label_frac, LV_TEXT_ALIGN_LEFT, 0);
+        lv_obj_align(label_frac, LV_ALIGN_CENTER, (int_w / 2), 0);
+        lv_obj_set_style_text_font(label_frac, &UI_FONT, 0);
+        lv_obj_set_style_text_color(label_frac, UI_FG_COLOR, 0);
+
+        s_temp_labels.int_lbl  = label_int;
+        s_temp_labels.frac_lbl = label_frac;
+        lv_subject_add_observer_obj(&value, temp_label_observer_cb, label_int, NULL);
+    }
+#else
+    {
+        lv_obj_t * label = lv_label_create(arc);
+        lv_obj_set_width(label, temp_label_max_width());
+        lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_RIGHT, 0);
+        lv_obj_center(label);
+        lv_subject_add_observer_obj(&value, temp_label_observer_cb, label, NULL);
+        lv_obj_set_style_text_font(label, &UI_FONT, 0);
+        lv_obj_set_style_text_color(label, UI_FG_COLOR, 0);
+    }
+#endif
 }
 
 static void notification_bar_create(lv_obj_t *viewport)
