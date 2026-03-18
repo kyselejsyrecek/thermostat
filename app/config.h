@@ -54,3 +54,20 @@
 /* ── Typography ────────────────────────────────────────────────────────────── */
 
 #define UI_FONT  lv_font_montserrat_32
+
+/* 1 if UI_FONT is a monospace (fixed-pitch) font.
+ * Automatically enables UI_TEMP_CENTER_EXACT so the full label is simply
+ * centred – justified, because every digit is the same width anyway. */
+#define UI_TEMP_MONO_FONT  0
+
+/* 1: render the temperature as a single centred label (the whole string,
+ *    e.g. "20,5 °C", is always horizontally centred as one unit).
+ * 0: use the split-label trick (decimals) or right-aligned label (integers)
+ *    so that the decimal separator / unit stays at a fixed position.
+ *
+ * Set to 1 explicitly to force centred rendering with a proportional font,
+ * or leave at 0 to let it be derived automatically from UI_TEMP_MONO_FONT. */
+//#define UI_TEMP_CENTER_EXACT 1
+#if !defined(UI_TEMP_CENTER_EXACT) && UI_TEMP_MIN >= 10 && UI_TEMP_MAX < 100
+#  define UI_TEMP_CENTER_EXACT  UI_TEMP_MONO_FONT
+#endif

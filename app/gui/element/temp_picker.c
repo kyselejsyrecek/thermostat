@@ -20,7 +20,7 @@ static int32_t arc_total_steps(void)
          + (UI_TEMP_MAX      - UI_TEMP_FINE_MAX) * 10 / UI_TEMP_PREC_NORMAL;
 }
 
-int32_t temp_picker_step_to_tenths(int32_t step)
+static int32_t temp_picker_step_to_tenths(int32_t step)
 {
     int32_t low_steps  = (UI_TEMP_FINE_MIN - UI_TEMP_MIN)      * 10 / UI_TEMP_PREC_NORMAL;
     int32_t fine_steps = (UI_TEMP_FINE_MAX - UI_TEMP_FINE_MIN) * 10 / UI_TEMP_PREC_FINE;
@@ -33,7 +33,7 @@ int32_t temp_picker_step_to_tenths(int32_t step)
     }
 }
 
-int32_t temp_picker_tenths_to_step(int32_t tenths)
+static int32_t temp_picker_tenths_to_step(int32_t tenths)
 {
     int32_t low_steps  = (UI_TEMP_FINE_MIN - UI_TEMP_MIN)      * 10 / UI_TEMP_PREC_NORMAL;
     int32_t fine_steps = (UI_TEMP_FINE_MAX - UI_TEMP_FINE_MIN) * 10 / UI_TEMP_PREC_FINE;
@@ -48,11 +48,70 @@ int32_t temp_picker_tenths_to_step(int32_t tenths)
 
 /* ── Label observer ─────────────────────────────────────────────────────────
  *
- * The observer callback receives a pointer to the owning TempPicker as
- * user_data so it can update both label widgets without a global variable.
+ * Three rendering modes, selected at compile time:
+ *
+ *   UI_TEMP_CENTER_EXACT  – single centred label; the whole string is always
+ *                           horizontally centred.  Automatically enabled for
+ *                           monospace fonts (UI_TEMP_MONO_FONT = 1) where
+ *                           every digit occupies the same pixel width.
+ *                           Can also be forced for proportional fonts.
+ *   UI_TEMP_SHOW_DECIMALS – two side-by-side labels; the decimal separator
+ *                           stays at a fixed horizontal position while the
+ *                           integer part grows/shrinks to the left.
+ *   (default)             – single right-aligned label; whole degrees only.
  * ────────────────────────────────────────────────────────────────────────── */
 
+#if UI_TEMP_CENTER_EXACT
+
+static void label_observer_cb(lv_observer_t *observer, lv_subject_t *subject)
+{
+    TempPicker *picker = (TempPicker *)lv_observer_get_user_data(observer);
+    int32_t tenths = temp_picker_step_to_tenths(lv_subject_get_int(subject));
+    char buf[24];
 #if UI_TEMP_SHOW_DECIMALS
+    lv_snprintf(buf, sizeof(buf), "%d%c%d \xc2\xb0" "C",
+                (int)(tenths / 10), UI_TEMP_DECIMAL_SEP, (int)(tenths % 10));
+#else
+    lv_snprintf(buf, sizeof(buf), "%d \xc2\xb0" "C", (int)(tenths / 10));
+#endif
+    lv_label_set_text(picker->int_lbl, buf);
+}
+
+/* Max pixel width of the complete label string across the full range. */
+static int32_t max_label_width(void)
+{
+    int32_t max_w = 0;
+    char buf[24];
+    int32_t steps = arc_total_steps();
+    for(int32_t s = 0; s <= steps; s++) {
+        int32_t tenths = temp_picker_step_to_tenths(s);
+#if UI_TEMP_SHOW_DECIMALS
+        lv_snprintf(buf, sizeof(buf), "%d%c%d \xc2\xb0" "C",
+                    (int)(tenths / 10), UI_TEMP_DECIMAL_SEP, (int)(tenths % 10));
+#else
+        lv_snprintf(buf, sizeof(buf), "%d \xc2\xb0" "C", (int)(tenths / 10));
+#endif
+        lv_point_t sz;
+        lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        if(sz.x > max_w) max_w = sz.x;
+    }
+    return max_w;
+}
+
+static void labels_create(lv_obj_t *arc, TempPicker *out)
+{
+    out->frac_lbl = NULL;
+    out->int_lbl  = lv_label_create(arc);
+    lv_obj_set_width(out->int_lbl, max_label_width());
+    lv_obj_set_style_text_align(out->int_lbl, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_center(out->int_lbl);
+    lv_obj_set_style_text_font(out->int_lbl, &UI_FONT, 0);
+    lv_obj_set_style_text_color(out->int_lbl, UI_FG_COLOR, 0);
+
+    lv_subject_add_observer_obj(&out->value, label_observer_cb, out->int_lbl, out);
+}
+
+#elif UI_TEMP_SHOW_DECIMALS
 
 static void label_observer_cb(lv_observer_t *observer, lv_subject_t *subject)
 {
@@ -162,7 +221,7 @@ static void labels_create(lv_obj_t *arc, TempPicker *out)
     lv_subject_add_observer_obj(&out->value, label_observer_cb, out->int_lbl, out);
 }
 
-#endif /* UI_TEMP_SHOW_DECIMALS */
+#endif /* UI_TEMP_CENTER_EXACT / UI_TEMP_SHOW_DECIMALS */
 
 /* ── Public API ─────────────────────────────────────────────────────────────*/
 
