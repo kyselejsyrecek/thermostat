@@ -17,8 +17,9 @@
 typedef struct {
     lv_obj_t    *arc;
     lv_subject_t value;    /* arc-step index; reactive via lv_subject API  */
-    lv_obj_t    *int_lbl;  /* integer part label (whole-number mode: full) */
-    lv_obj_t    *frac_lbl; /* fractional part label (decimal mode only)    */
+    lv_obj_t    *int_lbl;  /* integer part label; full label in simple modes       */
+    lv_obj_t    *frac_lbl; /* decimal part label (",X") (decimal mode only)       */
+    lv_obj_t    *unit_lbl; /* unit label (" °C"), fixed position (decimal mode)   */
 } TempPicker;
 
 /* Create the picker widget as a child of parent and populate *out.

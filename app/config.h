@@ -26,6 +26,38 @@
 /* 1: show one decimal digit in the label; 0: whole degrees only. */
 #define UI_TEMP_SHOW_DECIMALS  1
 
+/* ── Typography ────────────────────────────────────────────────────────────── */
+
+#define UI_FONT  lv_font_montserrat_32
+
+/* 1 if UI_FONT is a monospace (fixed-pitch) font.
+ * Automatically enables UI_TEMP_CENTER_EXACT so the full label is simply
+ * centred – justified, because every digit is the same width anyway. */
+#define UI_TEMP_MONO_FONT  0
+
+/* 1: render the temperature as a single centred label (the whole string,
+ *    e.g. "20,5 °C", is always horizontally centred as one unit).
+ * 0: use the split-label trick (decimals) or right-aligned label (integers)
+ *    so that the decimal separator / unit stays at a fixed position.
+ *
+ * Set to 1 explicitly to force centred rendering with a proportional font,
+ * or leave at 0 to let it be derived automatically from UI_TEMP_MONO_FONT. */
+//#define UI_TEMP_CENTER_EXACT 1
+#if !UI_TEMP_CENTER_EXACT && UI_TEMP_MIN >= 10 && UI_TEMP_MAX < 100
+#  define UI_TEMP_CENTER_EXACT  UI_TEMP_MONO_FONT
+#endif
+
+/* 1: when UI_TEMP_SHOW_DECIMALS is active, render the unit (" °C") as a
+ *    separate third label so that it stays at a fixed rightmost position
+ *    regardless of the number of integer digits.  The resulting layout is:
+ *      [ integer | ,X | °C ]
+ *    with all three blocks horizontally centred together.
+ * 0: unit is appended to the decimal label (",X °C"), which is the simpler
+ *    two-label layout. Has no effect when UI_TEMP_SHOW_DECIMALS is 0. */
+#if UI_TEMP_SHOW_DECIMALS
+#  define UI_TEMP_FIXED_UNIT  1
+#endif
+
 /* ── Colours ───────────────────────────────────────────────────────────────── */
 
 /* Foreground: text, arc indicator, knob, icons. */
@@ -50,24 +82,3 @@
 #define UI_GRAD_START_Y  LV_GRAD_CENTER
 #define UI_GRAD_END_X    LV_GRAD_CENTER
 #define UI_GRAD_END_Y    LV_GRAD_TOP
-
-/* ── Typography ────────────────────────────────────────────────────────────── */
-
-#define UI_FONT  lv_font_montserrat_32
-
-/* 1 if UI_FONT is a monospace (fixed-pitch) font.
- * Automatically enables UI_TEMP_CENTER_EXACT so the full label is simply
- * centred – justified, because every digit is the same width anyway. */
-#define UI_TEMP_MONO_FONT  0
-
-/* 1: render the temperature as a single centred label (the whole string,
- *    e.g. "20,5 °C", is always horizontally centred as one unit).
- * 0: use the split-label trick (decimals) or right-aligned label (integers)
- *    so that the decimal separator / unit stays at a fixed position.
- *
- * Set to 1 explicitly to force centred rendering with a proportional font,
- * or leave at 0 to let it be derived automatically from UI_TEMP_MONO_FONT. */
-//#define UI_TEMP_CENTER_EXACT 1
-#if !defined(UI_TEMP_CENTER_EXACT) && UI_TEMP_MIN >= 10 && UI_TEMP_MAX < 100
-#  define UI_TEMP_CENTER_EXACT  UI_TEMP_MONO_FONT
-#endif
