@@ -8,23 +8,26 @@
 #define UI_TEMP_MAX      30   /* °C – maximum selectable temperature          */
 #define UI_TEMP_DEFAULT  20   /* °C – initial setpoint                        */
 
-/* Arc step precision helpers – use these to configure the zones below. */
-#define UI_TEMP_PREC_WHOLE   10   /* 1.0 °C per step */
-#define UI_TEMP_PREC_HALF     5   /* 0.5 °C per step */
-#define UI_TEMP_PREC_FIFTH    2   /* 0.2 °C per step */
-#define UI_TEMP_PREC_TENTH    1   /* 0.1 °C per step */
-
-/* Fine-precision zone: higher arc resolution between these temperatures. */
-#define UI_TEMP_FINE_MIN     18   /* °C – lower bound of fine zone            */
-#define UI_TEMP_FINE_MAX     27   /* °C – upper bound of fine zone            */
-#define UI_TEMP_PREC_NORMAL  UI_TEMP_PREC_WHOLE   /* step size outside zone  */
-#define UI_TEMP_PREC_FINE    UI_TEMP_PREC_HALF    /* step size inside zone   */
-
 /* Decimal separator character shown in the temperature label (',' or '.'). */
 #define UI_TEMP_DECIMAL_SEP  ','
 
 /* 1: show one decimal digit in the label; 0: whole degrees only. */
-#define UI_TEMP_SHOW_DECIMALS  1
+#define UI_TEMP_ENABLE_DECIMALS  1
+
+/* Arc step precision helpers – use these to configure the zones below. */
+#define UI_TEMP_PREC_WHOLE   10   /* 1.0 °C per step */
+
+#if UI_TEMP_ENABLE_DECIMALS
+#  define UI_TEMP_PREC_HALF    5   /* 0.5 °C per step */
+#  define UI_TEMP_PREC_FIFTH   2   /* 0.2 °C per step */
+#  define UI_TEMP_PREC_TENTH   1   /* 0.1 °C per step */
+
+/* Fine-precision zone: higher arc resolution between these temperatures. */
+#  define UI_TEMP_FINE_MIN    18   /* °C – lower bound of fine zone           */
+#  define UI_TEMP_FINE_MAX    27   /* °C – upper bound of fine zone           */
+#  define UI_TEMP_PREC_NORMAL  UI_TEMP_PREC_WHOLE  /* step size outside zone */
+#  define UI_TEMP_PREC_FINE    UI_TEMP_PREC_HALF   /* step size inside zone  */
+#endif
 
 /* ── Typography ────────────────────────────────────────────────────────────── */
 
@@ -47,14 +50,14 @@
 #  define UI_TEMP_CENTER_EXACT  UI_TEMP_MONO_FONT
 #endif
 
-/* 1: when UI_TEMP_SHOW_DECIMALS is active, render the unit (" °C") as a
+/* 1: when UI_TEMP_ENABLE_DECIMALS is active, render the unit (" °C") as a
  *    separate third label so that it stays at a fixed rightmost position
  *    regardless of the number of integer digits.  The resulting layout is:
  *      [ integer | ,X | °C ]
  *    with all three blocks horizontally centred together.
  * 0: unit is appended to the decimal label (",X °C"), which is the simpler
- *    two-label layout. Has no effect when UI_TEMP_SHOW_DECIMALS is 0. */
-#if UI_TEMP_SHOW_DECIMALS
+ *    two-label layout. Has no effect when UI_TEMP_ENABLE_DECIMALS is 0. */
+#if UI_TEMP_ENABLE_DECIMALS
 #  define UI_TEMP_FIXED_UNIT  1
 #endif
 

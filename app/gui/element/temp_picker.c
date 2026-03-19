@@ -6,43 +6,59 @@
 /* ── Step ↔ temperature mapping ─────────────────────────────────────────────
  *
  * The arc is divided into three zones:
- *   [UI_TEMP_MIN … UI_TEMP_FINE_MIN)     – coarse steps (UI_TEMP_PREC_NORMAL)
- *   [UI_TEMP_FINE_MIN … UI_TEMP_FINE_MAX] – fine steps  (UI_TEMP_PREC_FINE)
- *   (UI_TEMP_FINE_MAX … UI_TEMP_MAX]     – coarse steps (UI_TEMP_PREC_NORMAL)
+ *   [UI_TEMP_MIN … ARC_FINE_MIN)        – coarse steps (ARC_PREC_NORMAL)
+ *   [ARC_FINE_MIN … ARC_FINE_MAX]       – fine steps   (ARC_PREC_FINE)
+ *   (ARC_FINE_MAX … UI_TEMP_MAX]        – coarse steps (ARC_PREC_NORMAL)
+ *
+ * When UI_TEMP_ENABLE_DECIMALS is 0, sub-degree positions are not
+ * representable in the label; the fine zone is collapsed (ARC_FINE_MIN =
+ * ARC_FINE_MAX = UI_TEMP_MIN) and the arc snaps at 1 °C intervals.
  *
  * All temperatures are stored in tenths of a degree internally.
  * ────────────────────────────────────────────────────────────────────────── */
 
+#if UI_TEMP_ENABLE_DECIMALS
+#  define ARC_FINE_MIN    UI_TEMP_FINE_MIN
+#  define ARC_FINE_MAX    UI_TEMP_FINE_MAX
+#  define ARC_PREC_NORMAL UI_TEMP_PREC_NORMAL
+#  define ARC_PREC_FINE   UI_TEMP_PREC_FINE
+#else
+#  define ARC_FINE_MIN    UI_TEMP_MIN
+#  define ARC_FINE_MAX    UI_TEMP_MIN
+#  define ARC_PREC_NORMAL UI_TEMP_PREC_WHOLE
+#  define ARC_PREC_FINE   UI_TEMP_PREC_WHOLE
+#endif
+
 static int32_t arc_total_steps(void)
 {
-    return (UI_TEMP_FINE_MIN - UI_TEMP_MIN)      * 10 / UI_TEMP_PREC_NORMAL
-         + (UI_TEMP_FINE_MAX - UI_TEMP_FINE_MIN) * 10 / UI_TEMP_PREC_FINE
-         + (UI_TEMP_MAX      - UI_TEMP_FINE_MAX) * 10 / UI_TEMP_PREC_NORMAL;
+    return (ARC_FINE_MIN - UI_TEMP_MIN)  * 10 / ARC_PREC_NORMAL
+         + (ARC_FINE_MAX - ARC_FINE_MIN) * 10 / ARC_PREC_FINE
+         + (UI_TEMP_MAX  - ARC_FINE_MAX) * 10 / ARC_PREC_NORMAL;
 }
 
 static int32_t temp_picker_step_to_tenths(int32_t step)
 {
-    int32_t low_steps  = (UI_TEMP_FINE_MIN - UI_TEMP_MIN)      * 10 / UI_TEMP_PREC_NORMAL;
-    int32_t fine_steps = (UI_TEMP_FINE_MAX - UI_TEMP_FINE_MIN) * 10 / UI_TEMP_PREC_FINE;
+    int32_t low_steps  = (ARC_FINE_MIN - UI_TEMP_MIN)  * 10 / ARC_PREC_NORMAL;
+    int32_t fine_steps = (ARC_FINE_MAX - ARC_FINE_MIN) * 10 / ARC_PREC_FINE;
     if(step <= low_steps) {
-        return UI_TEMP_MIN * 10 + step * UI_TEMP_PREC_NORMAL;
+        return UI_TEMP_MIN  * 10 + step * ARC_PREC_NORMAL;
     } else if(step <= low_steps + fine_steps) {
-        return UI_TEMP_FINE_MIN * 10 + (step - low_steps) * UI_TEMP_PREC_FINE;
+        return ARC_FINE_MIN * 10 + (step - low_steps) * ARC_PREC_FINE;
     } else {
-        return UI_TEMP_FINE_MAX * 10 + (step - low_steps - fine_steps) * UI_TEMP_PREC_NORMAL;
+        return ARC_FINE_MAX * 10 + (step - low_steps - fine_steps) * ARC_PREC_NORMAL;
     }
 }
 
 static int32_t temp_picker_tenths_to_step(int32_t tenths)
 {
-    int32_t low_steps  = (UI_TEMP_FINE_MIN - UI_TEMP_MIN)      * 10 / UI_TEMP_PREC_NORMAL;
-    int32_t fine_steps = (UI_TEMP_FINE_MAX - UI_TEMP_FINE_MIN) * 10 / UI_TEMP_PREC_FINE;
-    if(tenths <= UI_TEMP_FINE_MIN * 10) {
-        return (tenths - UI_TEMP_MIN * 10) / UI_TEMP_PREC_NORMAL;
-    } else if(tenths <= UI_TEMP_FINE_MAX * 10) {
-        return low_steps + (tenths - UI_TEMP_FINE_MIN * 10) / UI_TEMP_PREC_FINE;
+    int32_t low_steps  = (ARC_FINE_MIN - UI_TEMP_MIN)  * 10 / ARC_PREC_NORMAL;
+    int32_t fine_steps = (ARC_FINE_MAX - ARC_FINE_MIN) * 10 / ARC_PREC_FINE;
+    if(tenths <= ARC_FINE_MIN * 10) {
+        return (tenths - UI_TEMP_MIN * 10) / ARC_PREC_NORMAL;
+    } else if(tenths <= ARC_FINE_MAX * 10) {
+        return low_steps + (tenths - ARC_FINE_MIN * 10) / ARC_PREC_FINE;
     } else {
-        return low_steps + fine_steps + (tenths - UI_TEMP_FINE_MAX * 10) / UI_TEMP_PREC_NORMAL;
+        return low_steps + fine_steps + (tenths - ARC_FINE_MAX * 10) / ARC_PREC_NORMAL;
     }
 }
 
@@ -50,12 +66,12 @@ static int32_t temp_picker_tenths_to_step(int32_t tenths)
  *
  * Three layout modes, selected at compile time via config.h:
  *
- *   UI_TEMP_CENTER_EXACT=1          – single centred label (whole string)
- *   UI_TEMP_SHOW_DECIMALS=1,
- *     UI_TEMP_FIXED_UNIT=1          – three labels: [ integer | ,X | °C ]
- *   UI_TEMP_SHOW_DECIMALS=1,
- *     UI_TEMP_FIXED_UNIT=0          – two labels:   [ integer | ,X °C ]
- *   UI_TEMP_SHOW_DECIMALS=0         – single right-aligned label
+ *   UI_TEMP_CENTER_EXACT=1            – single centred label (whole string)
+ *   UI_TEMP_ENABLE_DECIMALS=1,
+ *     UI_TEMP_FIXED_UNIT=1            – three labels: [ integer | ,X | °C ]
+ *   UI_TEMP_ENABLE_DECIMALS=1,
+ *     UI_TEMP_FIXED_UNIT=0            – two labels:   [ integer | ,X °C ]
+ *   UI_TEMP_ENABLE_DECIMALS=0         – single right-aligned label
  *
  * In split-label modes the integer part grows/shrinks to the left while the
  * decimal separator (and optionally the unit) stay at a fixed position.
@@ -107,7 +123,7 @@ static void label_observer_cb(lv_observer_t *observer, lv_subject_t *subject)
 
 #if UI_TEMP_CENTER_EXACT
     /* Single centred label – format the whole string into int_lbl. */
-#  if UI_TEMP_SHOW_DECIMALS
+#  if UI_TEMP_ENABLE_DECIMALS
     lv_snprintf(buf, sizeof(buf), "%d%c%d \xc2\xb0" "C",
                 (int)(tenths / 10), UI_TEMP_DECIMAL_SEP, (int)(tenths % 10));
 #  else
@@ -115,7 +131,7 @@ static void label_observer_cb(lv_observer_t *observer, lv_subject_t *subject)
 #  endif
     lv_label_set_text(picker->int_lbl, buf);
 
-#elif UI_TEMP_SHOW_DECIMALS
+#elif UI_TEMP_ENABLE_DECIMALS
     /* Split-label: update integer part. */
     lv_snprintf(buf, sizeof(buf), "%d", (int)(tenths / 10));
     lv_label_set_text(picker->int_lbl, buf);
@@ -149,7 +165,7 @@ static void labels_create(lv_obj_t *arc, TempPicker *out)
     for(int32_t s = 0; s <= steps; s++) {
         int32_t tenths = temp_picker_step_to_tenths(s);
         char buf[24];
-#  if UI_TEMP_SHOW_DECIMALS
+#  if UI_TEMP_ENABLE_DECIMALS
         lv_snprintf(buf, sizeof(buf), "%d%c%d \xc2\xb0" "C",
                     (int)(tenths / 10), UI_TEMP_DECIMAL_SEP, (int)(tenths % 10));
 #  else
@@ -163,7 +179,7 @@ static void labels_create(lv_obj_t *arc, TempPicker *out)
     label_style(out->int_lbl, label_w, LV_TEXT_ALIGN_CENTER);
     lv_obj_center(out->int_lbl);
 
-#elif UI_TEMP_SHOW_DECIMALS
+#elif UI_TEMP_ENABLE_DECIMALS
     int32_t int_w = max_int_part_width();
 
 #  if UI_TEMP_FIXED_UNIT
@@ -195,7 +211,7 @@ static void labels_create(lv_obj_t *arc, TempPicker *out)
     lv_obj_align(out->unit_lbl, LV_ALIGN_CENTER, (int_w + dec_w) / 2, 0);
     lv_label_set_text(out->unit_lbl, " \xc2\xb0" "C");
 
-#  else /* UI_TEMP_SHOW_DECIMALS && !UI_TEMP_FIXED_UNIT */
+#  else /* UI_TEMP_ENABLE_DECIMALS && !UI_TEMP_FIXED_UNIT */
     /* Two-label mode: [ integer | ,X °C ]
      * Decimal separator stays at a fixed horizontal position;
      * the unit travels with the decimal digit. */
@@ -217,7 +233,7 @@ static void labels_create(lv_obj_t *arc, TempPicker *out)
     lv_obj_align(out->frac_lbl, LV_ALIGN_CENTER, (int_w / 2), 0);
 #  endif
 
-#else /* !UI_TEMP_CENTER_EXACT && !UI_TEMP_SHOW_DECIMALS */
+#else /* !UI_TEMP_CENTER_EXACT && !UI_TEMP_ENABLE_DECIMALS */
     /* Single right-aligned label; whole degrees only. */
     int32_t steps = arc_total_steps();
     int32_t label_w = 0;
