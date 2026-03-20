@@ -19,7 +19,8 @@ static void thermometer_observer_cb(lv_observer_t *observer, lv_subject_t *subje
 
 /* ── Public API ─────────────────────────────────────────────────────────────*/
 
-MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer)
+MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer,
+                               Battery *battery)
 {
     lv_obj_t *root = gui_screen_root_create(parent);
     s_screen.root = root;
@@ -35,7 +36,7 @@ MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer)
     lv_subject_add_observer_obj(&thermometer->value, thermometer_observer_cb,
                                 s_screen.labels.int_lbl, &s_screen);
 
-    notification_bar_create(root);
+    notification_bar_create(root, &s_screen.notif_bar, battery);
 
     return &s_screen;
 }

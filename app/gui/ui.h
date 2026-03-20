@@ -3,6 +3,7 @@
 #include "lvgl.h"
 
 #include "sensor/thermometer.h"
+#include "sensor/battery.h"
 #include "screen/set_temperature.h"
 #include "screen/main.h"
 
@@ -24,6 +25,7 @@ typedef struct {
     SetTemperatureScreen *set_temperature;
     MainScreen           *main_screen;
     Thermometer          *thermometer;
+    Battery              *battery;
 } UiHandle;
 
 /* Initialise the GUI.  Creates the circular viewport, mounts the active

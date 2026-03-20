@@ -144,3 +144,41 @@
 /* Multiplier for the knob touch hit-radius (integer × 10).
  * 10 = 1.0 (tight, visual knob only), 15 = 1.5 (default, comfortable fingertip). */
 #define UI_TEMP_PICKER_KNOB_HIT_SCALE  15
+
+/* ── Battery sensor ────────────────────────────────────────────────────────── */
+
+/* How often the battery percentage is read (ms). */
+#define BATTERY_PERCENT_INTERVAL_MS   60000u
+
+/* How often the charging state is polled (ms). */
+#define BATTERY_CHARGING_INTERVAL_MS   5000u
+
+/* Default stub values. */
+#define BATTERY_DEFAULT_PERCENT   80
+#define BATTERY_DEFAULT_CHARGING   1
+
+/* ── Battery UI thresholds & colours ───────────────────────────────────────── */
+
+/* Battery level at which the battery icon becomes visible (%). */
+#define UI_BATTERY_LOW_PERCENT      25
+
+/* Battery level at which the icon starts blinking (%). */
+#define UI_BATTERY_MIN_PERCENT      15
+
+/* Battery level at which the icon is considered critical (%). */
+#define UI_BATTERY_CRITICAL_PERCENT  5
+
+/* Icon colours for each state (all white by default). */
+#define UI_BATTERY_CHARGING_COLOR   UI_FG_COLOR
+#define UI_BATTERY_LOW_COLOR        UI_FG_COLOR
+#define UI_BATTERY_MIN_COLOR        UI_FG_COLOR
+#define UI_BATTERY_CRITICAL_COLOR   UI_FG_COLOR
+
+/* ── GUI animation timings ─────────────────────────────────────────────────── */
+
+/* Duration of fade-in and fade-out animations (ms). */
+#define UI_ANIM_FADE_IN_MS   1000u
+#define UI_ANIM_FADE_OUT_MS  1000u
+
+/* Pause between fade-out and next fade-in in the blink animation (ms). */
+#define UI_ANIM_BLINK_DELAY_MS  1500u

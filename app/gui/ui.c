@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include "sensor/thermometer.h"
+#include "sensor/battery.h"
 #include "screen/set_temperature.h"
 #include "screen/main.h"
 
@@ -80,7 +81,9 @@ UiHandle *ui_init(void)
 
     /* Main screen (sensor read-out, black background): */
     s_handle.thermometer  = thermometer_init();
-    s_handle.main_screen  = main_screen_create(viewport, s_handle.thermometer);
+    s_handle.battery      = battery_init();
+    s_handle.main_screen  = main_screen_create(viewport, s_handle.thermometer,
+                                               s_handle.battery);
 
     /* Set-temperature screen (arc temperature picker + gradient background): */
     s_handle.set_temperature = set_temperature_screen_create(viewport);

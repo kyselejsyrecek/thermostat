@@ -3,7 +3,9 @@
 #include "lvgl.h"
 
 #include "gui/common.h"
+#include "gui/element/notification_bar.h"
 #include "sensor/thermometer.h"
+#include "sensor/battery.h"
 
 /*
  * MainScreen – read-only display of the current room temperature.
@@ -14,10 +16,12 @@
  * on both screens.
  */
 typedef struct {
-    lv_obj_t  *root;
-    TempLabels labels;
+    lv_obj_t       *root;
+    TempLabels      labels;
+    NotificationBar notif_bar;
 } MainScreen;
 
 /* Assemble the main screen inside parent, subscribe to
  * thermometer->value and return a pointer to the static instance. */
-MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer);
+MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer,
+                               Battery *battery);
