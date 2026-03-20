@@ -33,8 +33,15 @@
 
 extern lv_font_t lv_font_montserrat_60;
 
-#define UI_FONT           lv_font_montserrat_32
-#define UI_FONT_MAIN_TEMP lv_font_montserrat_60
+#define UI_FONT                    lv_font_montserrat_32
+#define UI_FONT_MAIN_TEMP          lv_font_montserrat_60
+#define UI_FONT_MAIN_TARGET_TEMP   lv_font_montserrat_24
+
+/* Gap between the current-temperature row and the target-temperature row (px). */
+#define UI_MAIN_TEMP_GROUP_GAP  10
+
+/* Maximum number of settings change callbacks that can be registered. */
+#define SETTINGS_MAX_CBS  8
 
 /* 1 if UI_FONT is a monospace (fixed-pitch) font.
  * Automatically enables UI_TEMP_CENTER_EXACT so the full label is simply

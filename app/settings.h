@@ -22,3 +22,11 @@ void     __settings_set(size_t offset, uint32_t value);
 /* Write a value to a settings field and trigger persistence:
  *   settings_set(temperature, 205); */
 #define settings_set(attr, value)  __settings_set(offsetof(Settings, attr), (value))
+
+/* ── Change notifications ───────────────────────────────────────────────────
+ *
+ * Any module can register a callback that fires after every settings_set
+ * call.  The Settings pointer is valid only during the callback. */
+typedef void (*settings_cb_t)(const Settings *settings, void *user_data);
+
+void settings_register_cb(settings_cb_t cb, void *user_data);
