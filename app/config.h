@@ -85,3 +85,10 @@
 #define UI_GRAD_START_Y  LV_GRAD_CENTER
 #define UI_GRAD_END_X    LV_GRAD_CENTER
 #define UI_GRAD_END_Y    LV_GRAD_TOP
+
+/* ── Thermometer sensor ────────────────────────────────────────────────────── */
+
+/* How often the thermometer sensor is polled (ms).  The reactive subject is
+ * updated only when the reading changes, so observers are not notified
+ * unnecessarily. */
+#define THERMOMETER_INTERVAL_MS  15000u

@@ -2,6 +2,8 @@
 
 #include "lvgl.h"
 
+#include "gui/common.h"
+
 /*
  * TempPicker – reactive arc-based temperature selector.
  *
@@ -15,11 +17,9 @@
  *   lv_subject_set_int(&picker->value, new_step);
  */
 typedef struct {
-    lv_obj_t    *arc;
-    lv_subject_t value;    /* arc-step index; reactive via lv_subject API  */
-    lv_obj_t    *int_lbl;  /* integer part label; full label in simple modes       */
-    lv_obj_t    *frac_lbl; /* decimal part label (",X") (decimal mode only)       */
-    lv_obj_t    *unit_lbl; /* unit label (" °C"), fixed position (decimal mode)   */
+    lv_obj_t     *arc;
+    lv_subject_t  value;   /* arc-step index; reactive via lv_subject API */
+    TempLabels    labels;  /* temperature display labels (see gui/common.h) */
 } TempPicker;
 
 /* Create the picker widget as a child of parent and populate *out.

@@ -1,6 +1,8 @@
 #include "lvgl.h"
 
-#include "gui/screen/thermostat.h"
+#include "sensor/thermometer.h"
+#include "screen/thermostat.h"
+#include "screen/thermometer.h"
 
 #include "ui.h"
 
@@ -32,6 +34,18 @@ static UiHandle s_handle;
 UiHandle *ui_init(void)
 {
     lv_obj_t *viewport = bouding_circle_create();
-    s_handle.thermostat = thermostat_screen_create(viewport);
+
+    /* ── Active screen ──────────────────────────────────────────────────────
+     * Uncomment exactly one of the blocks below to select the screen to
+     * display.  The other block should remain commented out.
+     * ─────────────────────────────────────────────────────────────────────── */
+
+    /* Thermostat screen (arc temperature picker + gradient background): */
+    //s_handle.thermostat = thermostat_screen_create(viewport);
+
+    /* Thermometer screen (sensor read-out, black background): */
+    s_handle.thermometer        = thermometer_init();
+    s_handle.thermometer_screen = thermometer_screen_create(viewport, s_handle.thermometer);
+
     return &s_handle;
 }
