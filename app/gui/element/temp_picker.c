@@ -1,4 +1,5 @@
 #include "lvgl.h"
+#include "core/lv_obj_event_private.h"   /* lv_hit_test_info_t fields (read-only use) */
 
 #include "config.h"
 #include "gui/common.h"
@@ -80,7 +81,70 @@ static void label_observer_cb(lv_observer_t *observer, lv_subject_t *subject)
     gui_temp_label_update(&picker->labels, tenths);
 }
 
-/* ── Label creation ──────────────────────────────────────────────────────── */
+/* ── Knob-only guard ─────────────────────────────────────────────────────────
+ * When UI_TEMP_PICKER_RESPONSIVITY_KNOB_ONLY is enabled the arc receives a
+ * LV_EVENT_HIT_TEST callback that runs AFTER arc's own class handler.  If the
+ * touch point is outside the knob area we set info->res = false so the object
+ * never becomes the active indev target → no PRESSED / PRESSING ever fires.
+ *
+ * Geometry mirrors lv_arc.c's static get_center() + get_knob_area() using
+ * only public LVGL style/layout APIs – no LVGL source files are modified.
+ * ────────────────────────────────────────────────────────────────────────── */
+#if UI_TEMP_PICKER_RESPONSIVITY_KNOB_ONLY
+static void arc_knob_hittest_cb(lv_event_t *e)
+{
+    lv_hit_test_info_t *info = lv_event_get_hit_test_info(e);
+    /* If arc's own handler already rejected (e.g. dead-zone inside) keep it. */
+    if(!info->res) return;
+
+    lv_obj_t *obj = lv_event_get_current_target(e);
+
+    /* ── Replicate get_center() ────────────────────────────────────────────
+     * centre and radius use the BG-part padding, matching the arc source. */
+    lv_area_t coords;
+    lv_obj_get_coords(obj, &coords);   /* absolute screen coordinates */
+    int32_t left_bg   = lv_obj_get_style_pad_left  (obj, LV_PART_MAIN);
+    int32_t right_bg  = lv_obj_get_style_pad_right (obj, LV_PART_MAIN);
+    int32_t top_bg    = lv_obj_get_style_pad_top   (obj, LV_PART_MAIN);
+    int32_t bottom_bg = lv_obj_get_style_pad_bottom(obj, LV_PART_MAIN);
+    int32_t r = LV_MIN(lv_area_get_width (&coords) - left_bg - right_bg,
+                       lv_area_get_height(&coords) - top_bg  - bottom_bg) / 2;
+    lv_point_t center = {
+        .x = coords.x1 + left_bg + r,
+        .y = coords.y1 + top_bg  + r,
+    };
+
+    /* ── Replicate get_knob_area() radius ──────────────────────────────────
+     * subtract indic_width/2 and indicator-part max padding. */
+    int32_t indic_w     = lv_obj_get_style_arc_width(obj, LV_PART_INDICATOR);
+    int32_t indic_w2    = indic_w / 2;
+    int32_t indic_max_pad = LV_MAX4(
+        lv_obj_get_style_pad_left  (obj, LV_PART_INDICATOR),
+        lv_obj_get_style_pad_right (obj, LV_PART_INDICATOR),
+        lv_obj_get_style_pad_top   (obj, LV_PART_INDICATOR),
+        lv_obj_get_style_pad_bottom(obj, LV_PART_INDICATOR));
+    int32_t arc_r = r - indic_w2 - indic_max_pad;
+
+    /* ── Knob angle: rotation + indicator-end angle ────────────────────── */
+    int32_t knob_ang = (int32_t)lv_arc_get_angle_end(obj)
+                     + lv_arc_get_rotation(obj)
+                     + lv_arc_get_knob_offset(obj);
+
+    /* ── Knob centre in screen coords (lv_trigo_sin: 0°=right, LV_TRIGO_SHIFT scale) */
+    int32_t kx = center.x + ((arc_r * lv_trigo_sin(knob_ang + 90)) >> LV_TRIGO_SHIFT);
+    int32_t ky = center.y + ((arc_r * lv_trigo_sin(knob_ang))      >> LV_TRIGO_SHIFT);
+
+    /* ── Hit radius: half indic-width + knob padding, scaled by config ─── */
+    int32_t knob_r = (indic_w2
+                   + lv_obj_get_style_pad_top(obj, LV_PART_KNOB))
+                   * UI_TEMP_PICKER_KNOB_HIT_SCALE / 10;
+
+    int32_t dx = info->point->x - kx;
+    int32_t dy = info->point->y - ky;
+    if(dx * dx + dy * dy > knob_r * knob_r)
+        info->res = false;
+}
+#endif
 
 static void labels_create(lv_obj_t *arc, TempPicker *out)
 {
@@ -116,5 +180,10 @@ void temp_picker_create(lv_obj_t *parent, TempPicker *out)
     /* Enable advanced hit-testing so clicks in the arc centre area fall
      * through to the parent screen root (needed for nav double-tap gesture). */
     lv_obj_add_flag(arc, LV_OBJ_FLAG_ADV_HITTEST);
+
+#if UI_TEMP_PICKER_RESPONSIVITY_KNOB_ONLY
+    lv_obj_add_event_cb(arc, arc_knob_hittest_cb, LV_EVENT_HIT_TEST, NULL);
+#endif
+
     labels_create(arc, out);
 }

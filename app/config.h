@@ -131,3 +131,16 @@
 
 /* Duration of the snap / completion animation in milliseconds. */
 #define UI_SWIPE_ANIM_MS        250
+
+/* ── Temp-picker interaction ───────────────────────────────────────────────── */
+
+/* 1: the temperature arc only responds to touches that land on the knob.
+ *    Touching the scale track elsewhere is ignored, so an accidental swipe
+ *    across the screen cannot change the set-point.
+ * 0: standard LVGL arc behaviour – touching anywhere on the track jumps
+ *    the value to that position immediately. */
+#define UI_TEMP_PICKER_RESPONSIVITY_KNOB_ONLY  1
+
+/* Multiplier for the knob touch hit-radius (integer × 10).
+ * 10 = 1.0 (tight, visual knob only), 15 = 1.5 (default, comfortable fingertip). */
+#define UI_TEMP_PICKER_KNOB_HIT_SCALE  15
