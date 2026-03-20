@@ -4,33 +4,33 @@
 
 #include "common.h"
 
-void gui_label_style(lv_obj_t *lbl, int32_t w, lv_text_align_t align, lv_color_t color)
+void gui_label_style(lv_obj_t *lbl, int32_t w, lv_text_align_t align, lv_color_t color, const lv_font_t *font)
 {
     lv_obj_set_width(lbl, w);
     lv_obj_set_style_text_align(lbl, align, 0);
-    lv_obj_set_style_text_font(lbl, &UI_FONT, 0);
+    lv_obj_set_style_text_font(lbl, font, 0);
     lv_obj_set_style_text_color(lbl, color, 0);
 }
 
-int32_t gui_measure_max_width(const char *strings[], int count)
+int32_t gui_measure_max_width(const char *strings[], int count, const lv_font_t *font)
 {
     int32_t max_w = 0;
     for(int i = 0; i < count; i++) {
         lv_point_t sz;
-        lv_text_get_size(&sz, strings[i], &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        lv_text_get_size(&sz, strings[i], font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
         if(sz.x > max_w) max_w = sz.x;
     }
     return max_w;
 }
 
-int32_t gui_max_int_part_width(int min_celsius, int max_celsius)
+int32_t gui_max_int_part_width(int min_celsius, int max_celsius, const lv_font_t *font)
 {
     int32_t max_w = 0;
     for(int t = min_celsius; t <= max_celsius; t++) {
         char buf[8];
         lv_snprintf(buf, sizeof(buf), "%d", t);
         lv_point_t sz;
-        lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        lv_text_get_size(&sz, buf, font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
         if(sz.x > max_w) max_w = sz.x;
     }
     return max_w;
@@ -71,7 +71,7 @@ void gui_temp_label_update(TempLabels *labels, int32_t tenths)
 #endif
 }
 
-void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
+void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color, const lv_font_t *font)
 {
     out->frac_lbl = NULL;
     out->unit_lbl = NULL;
@@ -86,22 +86,22 @@ void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
             lv_snprintf(buf, sizeof(buf), "%d%c%d \xc2\xb0" "C",
                         t, UI_TEMP_DECIMAL_SEP, d);
             lv_point_t sz;
-            lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+            lv_text_get_size(&sz, buf, font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
             if(sz.x > label_w) label_w = sz.x;
         }
 #  else
         lv_snprintf(buf, sizeof(buf), "%d \xc2\xb0" "C", t);
         lv_point_t sz;
-        lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        lv_text_get_size(&sz, buf, font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
         if(sz.x > label_w) label_w = sz.x;
 #  endif
     }
     out->int_lbl = lv_label_create(parent);
-    gui_label_style(out->int_lbl, label_w, LV_TEXT_ALIGN_CENTER, color);
+    gui_label_style(out->int_lbl, label_w, LV_TEXT_ALIGN_CENTER, color, font);
     lv_obj_center(out->int_lbl);
 
 #elif UI_TEMP_ENABLE_DECIMALS
-    int32_t int_w = gui_max_int_part_width(UI_TEMP_MIN / 10, UI_TEMP_MAX / 10);
+    int32_t int_w = gui_max_int_part_width(UI_TEMP_MIN / 10, UI_TEMP_MAX / 10, font);
 
 #  if UI_TEMP_FIXED_UNIT
     /* Three-label layout: [ integer | ,X | °C ]
@@ -115,20 +115,20 @@ void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
         lv_snprintf(dec_strs[d], sizeof(dec_strs[d]), "%c%d", UI_TEMP_DECIMAL_SEP, d);
         dec_ptrs[d] = dec_strs[d];
     }
-    int32_t dec_w  = gui_measure_max_width(dec_ptrs, 10);
+    int32_t dec_w  = gui_measure_max_width(dec_ptrs, 10, font);
     const char *unit_str[] = { " \xc2\xb0" "C" };
-    int32_t unit_w = gui_measure_max_width(unit_str, 1);
+    int32_t unit_w = gui_measure_max_width(unit_str, 1, font);
 
     out->int_lbl = lv_label_create(parent);
-    gui_label_style(out->int_lbl, int_w, LV_TEXT_ALIGN_RIGHT, color);
+    gui_label_style(out->int_lbl, int_w, LV_TEXT_ALIGN_RIGHT, color, font);
     lv_obj_align(out->int_lbl, LV_ALIGN_CENTER, -(dec_w + unit_w) / 2, 0);
 
     out->frac_lbl = lv_label_create(parent);
-    gui_label_style(out->frac_lbl, dec_w, LV_TEXT_ALIGN_LEFT, color);
+    gui_label_style(out->frac_lbl, dec_w, LV_TEXT_ALIGN_LEFT, color, font);
     lv_obj_align(out->frac_lbl, LV_ALIGN_CENTER, (int_w - unit_w) / 2, 0);
 
     out->unit_lbl = lv_label_create(parent);
-    gui_label_style(out->unit_lbl, unit_w, LV_TEXT_ALIGN_LEFT, color);
+    gui_label_style(out->unit_lbl, unit_w, LV_TEXT_ALIGN_LEFT, color, font);
     lv_obj_align(out->unit_lbl, LV_ALIGN_CENTER, (int_w + dec_w) / 2, 0);
     lv_label_set_text(out->unit_lbl, " \xc2\xb0" "C");
 
@@ -142,14 +142,14 @@ void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
                     "%c%d \xc2\xb0" "C", UI_TEMP_DECIMAL_SEP, d);
         frac_ptrs[d] = frac_strs[d];
     }
-    int32_t frac_w = gui_measure_max_width(frac_ptrs, 10);
+    int32_t frac_w = gui_measure_max_width(frac_ptrs, 10, font);
 
     out->int_lbl = lv_label_create(parent);
-    gui_label_style(out->int_lbl, int_w, LV_TEXT_ALIGN_RIGHT, color);
+    gui_label_style(out->int_lbl, int_w, LV_TEXT_ALIGN_RIGHT, color, font);
     lv_obj_align(out->int_lbl, LV_ALIGN_CENTER, -(frac_w / 2), 0);
 
     out->frac_lbl = lv_label_create(parent);
-    gui_label_style(out->frac_lbl, frac_w, LV_TEXT_ALIGN_LEFT, color);
+    gui_label_style(out->frac_lbl, frac_w, LV_TEXT_ALIGN_LEFT, color, font);
     lv_obj_align(out->frac_lbl, LV_ALIGN_CENTER, (int_w / 2), 0);
 #  endif
 
@@ -160,11 +160,11 @@ void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
         char buf[16];
         lv_snprintf(buf, sizeof(buf), "%d \xc2\xb0" "C", t);
         lv_point_t sz;
-        lv_text_get_size(&sz, buf, &UI_FONT, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        lv_text_get_size(&sz, buf, font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
         if(sz.x > label_w) label_w = sz.x;
     }
     out->int_lbl = lv_label_create(parent);
-    gui_label_style(out->int_lbl, label_w, LV_TEXT_ALIGN_RIGHT, color);
+    gui_label_style(out->int_lbl, label_w, LV_TEXT_ALIGN_RIGHT, color, font);
     lv_obj_center(out->int_lbl);
 #endif
 }

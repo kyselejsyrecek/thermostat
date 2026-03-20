@@ -29,7 +29,7 @@ MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer,
     lv_obj_set_style_bg_color(root, lv_color_black(), 0);
     lv_obj_set_style_bg_opa(root, LV_OPA_COVER, 0);
 
-    gui_temp_labels_create(root, &s_screen.labels, UI_FG_COLOR);
+    gui_temp_labels_create(root, &s_screen.labels, UI_FG_COLOR, &UI_FONT_MAIN_TEMP);
 
     /* Subscribe to thermometer; observer is auto-removed when int_lbl is
      * deleted (lifetime tied to the parent widget). */

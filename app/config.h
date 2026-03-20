@@ -31,7 +31,10 @@
 
 /* ── Typography ────────────────────────────────────────────────────────────── */
 
-#define UI_FONT  lv_font_montserrat_32
+extern lv_font_t lv_font_montserrat_60;
+
+#define UI_FONT           lv_font_montserrat_32
+#define UI_FONT_MAIN_TEMP lv_font_montserrat_60
 
 /* 1 if UI_FONT is a monospace (fixed-pitch) font.
  * Automatically enables UI_TEMP_CENTER_EXACT so the full label is simply

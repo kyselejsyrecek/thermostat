@@ -159,7 +159,7 @@ static void arc_knob_hittest_cb(lv_event_t *e)
 
 static void labels_create(lv_obj_t *arc, TempPicker *out)
 {
-    gui_temp_labels_create(arc, &out->labels, UI_FG_COLOR);
+    gui_temp_labels_create(arc, &out->labels, UI_FG_COLOR, &UI_FONT);
     lv_subject_add_observer_obj(&out->value, label_observer_cb,
                                 out->labels.int_lbl, out);
 }
