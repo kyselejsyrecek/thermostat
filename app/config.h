@@ -4,9 +4,9 @@
 
 /* ── Temperature range ─────────────────────────────────────────────────────── */
 
-#define UI_TEMP_MIN      15   /* °C – minimum selectable temperature          */
-#define UI_TEMP_MAX      30   /* °C – maximum selectable temperature          */
-#define UI_TEMP_DEFAULT  20   /* °C – initial setpoint                        */
+#define UI_TEMP_MIN      150  /* tenths of °C – minimum selectable temperature (15.0 °C) */
+#define UI_TEMP_MAX      300  /* tenths of °C – maximum selectable temperature (30.0 °C) */
+#define UI_TEMP_DEFAULT  200  /* tenths of °C – initial setpoint              (20.0 °C) */
 
 /* Decimal separator character shown in the temperature label (',' or '.'). */
 #define UI_TEMP_DECIMAL_SEP  ','
@@ -23,8 +23,8 @@
 #  define UI_TEMP_PREC_TENTH   1   /* 0.1 °C per step */
 
 /* Fine-precision zone: higher arc resolution between these temperatures. */
-#  define UI_TEMP_FINE_MIN    18   /* °C – lower bound of fine zone           */
-#  define UI_TEMP_FINE_MAX    27   /* °C – upper bound of fine zone           */
+#  define UI_TEMP_FINE_MIN    180   /* tenths of °C – lower bound of fine zone (18.0 °C) */
+#  define UI_TEMP_FINE_MAX    270   /* tenths of °C – upper bound of fine zone (27.0 °C) */
 #  define UI_TEMP_PREC_NORMAL  UI_TEMP_PREC_WHOLE  /* step size outside zone */
 #  define UI_TEMP_PREC_FINE    UI_TEMP_PREC_HALF   /* step size inside zone  */
 #endif
@@ -46,7 +46,7 @@
  * Set to 1 explicitly to force centred rendering with a proportional font,
  * or leave at 0 to let it be derived automatically from UI_TEMP_MONO_FONT. */
 //#define UI_TEMP_CENTER_EXACT 1
-#if !UI_TEMP_CENTER_EXACT && UI_TEMP_MIN >= 10 && UI_TEMP_MAX < 100
+#if !UI_TEMP_CENTER_EXACT && UI_TEMP_MIN >= 100 && UI_TEMP_MAX < 1000
 #  define UI_TEMP_CENTER_EXACT  UI_TEMP_MONO_FONT
 #endif
 

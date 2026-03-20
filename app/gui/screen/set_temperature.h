@@ -3,6 +3,7 @@
 #include "lvgl.h"
 
 #include "gui/element/temp_picker.h"
+#include "gui/navigation.h"
 
 /*
  * SetTemperatureScreen – layout handle for the temperature set-point screen.
@@ -24,3 +25,14 @@ typedef struct {
 /* Assemble the set-temperature screen inside parent and return a pointer to
  * the static SetTemperatureScreen instance owned by this translation unit. */
 SetTemperatureScreen *set_temperature_screen_create(lv_obj_t *parent);
+
+/* Navigation transition callback.
+ *
+ * Register with navigation_set_transition_cb().  Automatically uses
+ * settings_temperature() to persist the new value.
+ * Double-tap is treated as "cancel" – the stored temperature is left
+ * unchanged:
+ *
+ *   navigation_set_transition_cb(set_temperature_nav_transition_cb); */
+void set_temperature_nav_transition_cb(lv_obj_t *from, lv_obj_t *to,
+                                       nav_gesture_t gesture);

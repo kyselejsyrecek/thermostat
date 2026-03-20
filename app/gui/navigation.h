@@ -43,3 +43,33 @@ void navigation_add_drag_guard(lv_obj_t *obj);
  * Screens with the same layer fall back to the current-screen-moves behaviour.
  * Call after navigation_init(); default layer for all screens is 0. */
 void navigation_set_layer(lv_obj_t *screen, int8_t layer);
+
+/* Gesture that triggered the last completed transition.
+ * NAV_GESTURE_NONE is the default state (no transition in progress or the
+ * animation has fully settled). */
+typedef enum {
+    NAV_GESTURE_NONE,         /* idle / no transition                        */
+    NAV_GESTURE_SWIPE_LEFT,   /* committed drag toward left edge             */
+    NAV_GESTURE_SWIPE_RIGHT,  /* committed drag toward right edge            */
+    NAV_GESTURE_SWIPE_UP,     /* committed drag toward top edge              */
+    NAV_GESTURE_SWIPE_DOWN,   /* committed drag toward bottom edge           */
+    NAV_GESTURE_TAP,          /* single tap                                  */
+    NAV_GESTURE_DOUBLE_TAP,   /* two quick taps (often means "cancel")      */
+    NAV_GESTURE_LONG_PRESS,   /* press held for LVGL long-press time        */
+} nav_gesture_t;
+
+/* Transition-complete callback type.
+ *
+ *   from    – root of the screen that was active before the transition.
+ *   to      – root of the screen that is now active.
+ *   gesture – gesture that triggered the transition.
+ *
+ * Only called when the transition actually changes the active screen (i.e.
+ * not when a drag is cancelled and the screen snaps back).  After the
+ * callback returns, last_gesture is reset to NAV_GESTURE_NONE. */
+typedef void (*nav_transition_cb_t)(lv_obj_t *from, lv_obj_t *to,
+                                    nav_gesture_t gesture);
+
+/* Register a single global callback invoked at the end of every successful
+ * screen transition.  Pass NULL to unregister.  Call after navigation_init(). */
+void navigation_set_transition_cb(nav_transition_cb_t cb);

@@ -44,6 +44,9 @@ typedef struct {
     uint8_t      cover_idx;     /* which of current/next is the cover (slides) */
     int8_t       layers[NAV_SCREENS_MAX]; /* z-order per screen; higher = in front */
 
+    nav_gesture_t        last_gesture;     /* gesture that triggered last transition */
+    nav_transition_cb_t  transition_cb;
+
     lv_obj_t   *drag_guards[NAV_SCREENS_MAX]; /* objects frozen during swipe  */
     uint8_t     drag_guard_count;
 } NavigationState;
@@ -104,6 +107,10 @@ static void anim_completed_cb(lv_anim_t *a)
         lv_obj_add_flag(out, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_pos(out, 0, 0);       /* reset for future use */
         s_nav.current = s_nav.anim_next;
+        /* Notify listener (e.g. save settings on confirmed swipe). */
+        if(s_nav.transition_cb)
+            s_nav.transition_cb(out, cur_root(), s_nav.last_gesture);
+        s_nav.last_gesture = NAV_GESTURE_NONE;
     } else {
         /* Canceled: snap incoming back off-screen and hide it. */
         lv_obj_t *in = nxt_root();
@@ -144,6 +151,13 @@ static void launch_anim(lv_obj_t *obj, int32_t start, int32_t end, bool is_x)
  * The base screen is already at (0,0) and stays there. */
 static void complete_transition(void)
 {
+    /* Report the exact swipe direction so callbacks can act on it. */
+    if(s_nav.drag_axis == 0)
+        s_nav.last_gesture = (s_nav.drag_dir_sign > 0)
+                             ? NAV_GESTURE_SWIPE_RIGHT : NAV_GESTURE_SWIPE_LEFT;
+    else
+        s_nav.last_gesture = (s_nav.drag_dir_sign > 0)
+                             ? NAV_GESTURE_SWIPE_DOWN : NAV_GESTURE_SWIPE_UP;
     bool    is_x = (s_nav.drag_axis == 0);
     int32_t dim  = is_x ? UI_DISPLAY_WIDTH : UI_DISPLAY_HEIGHT;
 
@@ -356,6 +370,7 @@ static void on_clicked_cb(lv_event_t *e)
     if(s_nav.state != NAV_IDLE) return;
     if(s_nav.drag_attempted) return;          /* was actually a drag */
     if(!(active_mask() & UI_NAV_TAP)) return;
+    s_nav.last_gesture = NAV_GESTURE_TAP;
     instant_transition();
 }
 #endif
@@ -365,6 +380,7 @@ static void on_double_clicked_cb(lv_event_t *e)
 {
     if(s_nav.state != NAV_IDLE) return;
     if(!(active_mask() & UI_NAV_DOUBLE_TAP)) return;
+    s_nav.last_gesture = NAV_GESTURE_DOUBLE_TAP;
     instant_transition();
 }
 #endif
@@ -374,6 +390,7 @@ static void on_long_pressed_cb(lv_event_t *e)
 {
     if(s_nav.state != NAV_IDLE) return;
     if(!(active_mask() & UI_NAV_LONG_PRESS)) return;
+    s_nav.last_gesture = NAV_GESTURE_LONG_PRESS;
     instant_transition();
 }
 #endif
@@ -390,6 +407,8 @@ void navigation_init(lv_obj_t *screens[])
     s_nav.drag_dir_sign = 0;
     s_nav.anim_pending  = 0;
     s_nav.cover_idx     = 0;
+    s_nav.last_gesture  = NAV_GESTURE_NONE;
+    s_nav.transition_cb = NULL;
 
     /* Copy the NULL-terminated array into the NavigationState. */
     for(uint8_t i = 0; screens[i] != NULL && i < NAV_SCREENS_MAX; i++) {
@@ -447,4 +466,9 @@ void navigation_set_layer(lv_obj_t *screen, int8_t layer)
             return;
         }
     }
+}
+
+void navigation_set_transition_cb(nav_transition_cb_t cb)
+{
+    s_nav.transition_cb = cb;
 }

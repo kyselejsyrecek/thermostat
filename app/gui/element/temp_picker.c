@@ -34,35 +34,47 @@
 
 static int32_t arc_total_steps(void)
 {
-    return (ARC_FINE_MIN - UI_TEMP_MIN)  * 10 / ARC_PREC_NORMAL
-         + (ARC_FINE_MAX - ARC_FINE_MIN) * 10 / ARC_PREC_FINE
-         + (UI_TEMP_MAX  - ARC_FINE_MAX) * 10 / ARC_PREC_NORMAL;
+    return (ARC_FINE_MIN - UI_TEMP_MIN)  / ARC_PREC_NORMAL
+         + (ARC_FINE_MAX - ARC_FINE_MIN) / ARC_PREC_FINE
+         + (UI_TEMP_MAX  - ARC_FINE_MAX) / ARC_PREC_NORMAL;
 }
 
 static int32_t temp_picker_step_to_tenths(int32_t step)
 {
-    int32_t low_steps  = (ARC_FINE_MIN - UI_TEMP_MIN)  * 10 / ARC_PREC_NORMAL;
-    int32_t fine_steps = (ARC_FINE_MAX - ARC_FINE_MIN) * 10 / ARC_PREC_FINE;
+    int32_t low_steps  = (ARC_FINE_MIN - UI_TEMP_MIN)  / ARC_PREC_NORMAL;
+    int32_t fine_steps = (ARC_FINE_MAX - ARC_FINE_MIN) / ARC_PREC_FINE;
     if(step <= low_steps) {
-        return UI_TEMP_MIN  * 10 + step * ARC_PREC_NORMAL;
+        return UI_TEMP_MIN  + step * ARC_PREC_NORMAL;
     } else if(step <= low_steps + fine_steps) {
-        return ARC_FINE_MIN * 10 + (step - low_steps) * ARC_PREC_FINE;
+        return ARC_FINE_MIN + (step - low_steps) * ARC_PREC_FINE;
     } else {
-        return ARC_FINE_MAX * 10 + (step - low_steps - fine_steps) * ARC_PREC_NORMAL;
+        return ARC_FINE_MAX + (step - low_steps - fine_steps) * ARC_PREC_NORMAL;
     }
 }
 
 static int32_t temp_picker_tenths_to_step(int32_t tenths)
 {
-    int32_t low_steps  = (ARC_FINE_MIN - UI_TEMP_MIN)  * 10 / ARC_PREC_NORMAL;
-    int32_t fine_steps = (ARC_FINE_MAX - ARC_FINE_MIN) * 10 / ARC_PREC_FINE;
-    if(tenths <= ARC_FINE_MIN * 10) {
-        return (tenths - UI_TEMP_MIN * 10) / ARC_PREC_NORMAL;
-    } else if(tenths <= ARC_FINE_MAX * 10) {
-        return low_steps + (tenths - ARC_FINE_MIN * 10) / ARC_PREC_FINE;
+    int32_t low_steps  = (ARC_FINE_MIN - UI_TEMP_MIN)  / ARC_PREC_NORMAL;
+    int32_t fine_steps = (ARC_FINE_MAX - ARC_FINE_MIN) / ARC_PREC_FINE;
+    if(tenths <= ARC_FINE_MIN) {
+        return (tenths - UI_TEMP_MIN) / ARC_PREC_NORMAL;
+    } else if(tenths <= ARC_FINE_MAX) {
+        return low_steps + (tenths - ARC_FINE_MIN) / ARC_PREC_FINE;
     } else {
-        return low_steps + fine_steps + (tenths - ARC_FINE_MAX * 10) / ARC_PREC_NORMAL;
+        return low_steps + fine_steps + (tenths - ARC_FINE_MAX) / ARC_PREC_NORMAL;
     }
+}
+
+/* ── Step → tenths observer ─────────────────────────────────────────────────
+ * Fires whenever the arc step changes (user interaction or programmatic).
+ * Converts step → tenths and publishes to the public value subject.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+static void step_observer_cb(lv_observer_t *observer, lv_subject_t *subject)
+{
+    TempPicker *picker = (TempPicker *)lv_observer_get_user_data(observer);
+    lv_subject_set_int(&picker->value,
+                       temp_picker_step_to_tenths(lv_subject_get_int(subject)));
 }
 
 /* ── Label rendering ─────────────────────────────────────────────────────────
@@ -77,8 +89,7 @@ static int32_t temp_picker_tenths_to_step(int32_t tenths)
 static void label_observer_cb(lv_observer_t *observer, lv_subject_t *subject)
 {
     TempPicker *picker = (TempPicker *)lv_observer_get_user_data(observer);
-    int32_t tenths = temp_picker_step_to_tenths(lv_subject_get_int(subject));
-    gui_temp_label_update(&picker->labels, tenths);
+    gui_temp_label_update(&picker->labels, lv_subject_get_int(subject));
 }
 
 /* ── Knob-only guard ─────────────────────────────────────────────────────────
@@ -155,9 +166,19 @@ static void labels_create(lv_obj_t *arc, TempPicker *out)
 
 /* ── Public API ─────────────────────────────────────────────────────────────*/
 
+void temp_picker_set_tenths(TempPicker *picker, int32_t tenths)
+{
+    lv_subject_set_int(&picker->arc_step, temp_picker_tenths_to_step(tenths));
+}
+
 void temp_picker_create(lv_obj_t *parent, TempPicker *out)
 {
-    lv_subject_init_int(&out->value, temp_picker_tenths_to_step(UI_TEMP_DEFAULT * 10));
+    /* arc_step is the internal arc index; value exposes the result in tenths.
+     * arc_step drives the arc widget via lv_arc_bind_value; step_observer_cb
+     * converts step → tenths and writes to value. */
+    lv_subject_init_int(&out->arc_step,
+                        temp_picker_tenths_to_step(UI_TEMP_DEFAULT));
+    lv_subject_init_int(&out->value, UI_TEMP_DEFAULT);
 
     lv_obj_t *arc = lv_arc_create(parent);
     static const uint8_t dial_scale_perc = 58;
@@ -166,7 +187,7 @@ void temp_picker_create(lv_obj_t *parent, TempPicker *out)
                     LV_VER_RES * dial_scale_perc / 100);
     lv_obj_center(arc);
     lv_arc_set_range(arc, 0, arc_total_steps());
-    lv_arc_bind_value(arc, &out->value);
+    lv_arc_bind_value(arc, &out->arc_step);   /* arc ⇄ arc_step */
 
     lv_obj_set_style_bg_opa(arc, LV_OPA_TRANSP, 0);
     lv_obj_set_style_arc_opa(arc, LV_OPA_50, LV_PART_MAIN);
@@ -184,6 +205,10 @@ void temp_picker_create(lv_obj_t *parent, TempPicker *out)
 #if UI_TEMP_PICKER_RESPONSIVITY_KNOB_ONLY
     lv_obj_add_event_cb(arc, arc_knob_hittest_cb, LV_EVENT_HIT_TEST, NULL);
 #endif
+
+    /* arc_step → value (tenths) conversion observer.  Must be added after
+     * lv_arc_bind_value so that the initial arc display is set first. */
+    lv_subject_add_observer(&out->arc_step, step_observer_cb, out);
 
     labels_create(arc, out);
 }

@@ -98,6 +98,7 @@ UiHandle *ui_init(void)
      * which stays fixed at its final position (0,0) during transitions. */
     navigation_set_layer(s_handle.main_screen->root, 1);
     navigation_add_drag_guard(s_handle.set_temperature->picker.arc);
+    navigation_set_transition_cb(set_temperature_nav_transition_cb);
 
     return &s_handle;
 }
