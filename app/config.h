@@ -102,3 +102,32 @@
 #  define UI_SIM_BORDER_WIDTH  2
 #  define UI_SIM_BORDER_COLOR  lv_color_hex(0xFFFFFF)
 #endif
+
+/* ── Screen navigation ─────────────────────────────────────────────────────── */
+
+/* Individual gesture flags – combine with | to form a navigation mask. */
+#define UI_NAV_TAP          (1u << 0)   /* Short tap anywhere on the screen    */
+#define UI_NAV_DOUBLE_TAP   (1u << 1)   /* Two quick taps                      */
+#define UI_NAV_LONG_PRESS   (1u << 2)   /* Press held for LVGL long-press time */
+#define UI_NAV_SWIPE_LEFT   (1u << 3)   /* Horizontal swipe toward left edge   */
+#define UI_NAV_SWIPE_RIGHT  (1u << 4)   /* Horizontal swipe toward right edge  */
+#define UI_NAV_SWIPE_UP     (1u << 5)   /* Vertical swipe toward top edge      */
+#define UI_NAV_SWIPE_DOWN   (1u << 6)   /* Vertical swipe toward bottom edge   */
+
+/* Gestures that navigate from the main screen to the set-temperature screen. */
+#define UI_NAV_TO_SET_TEMPERATURE    (UI_NAV_SWIPE_LEFT | UI_NAV_SWIPE_RIGHT)
+
+/* Gestures that navigate back from the set-temperature screen to the main screen.
+ * NOTE: swipe gestures are blocked when the touch starts on the arc picker. */
+#define UI_NAV_FROM_SET_TEMPERATURE  (UI_NAV_DOUBLE_TAP | UI_NAV_SWIPE_LEFT | UI_NAV_SWIPE_RIGHT)
+
+/* A drag must travel at least this many percent of the display dimension
+ * before it is committed on release.  Below this the screen snaps back. */
+#define UI_SWIPE_THRESHOLD_PERCENT  30
+
+/* Minimum finger travel in pixels along either axis before the swipe axis
+ * is locked.  Below this threshold the touch is treated as a tap. */
+#define UI_SWIPE_AXIS_LOCK_PX  8
+
+/* Duration of the snap / completion animation in milliseconds. */
+#define UI_SWIPE_ANIM_MS        250

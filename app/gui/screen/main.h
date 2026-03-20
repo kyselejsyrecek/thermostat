@@ -6,7 +6,7 @@
 #include "sensor/thermometer.h"
 
 /*
- * ThermometerScreen – read-only display of the current room temperature.
+ * MainScreen – read-only display of the current room temperature.
  *
  * Subscribes to thermometer->value and keeps the label group up-to-date for
  * the lifetime of the screen.  Layout and typography are controlled by
@@ -16,9 +16,8 @@
 typedef struct {
     lv_obj_t  *root;
     TempLabels labels;
-} ThermometerScreen;
+} MainScreen;
 
-/* Assemble the thermometer screen inside parent, subscribe to
+/* Assemble the main screen inside parent, subscribe to
  * thermometer->value and return a pointer to the static instance. */
-ThermometerScreen *thermometer_screen_create(lv_obj_t *parent,
-                                             Thermometer *thermometer);
+MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer);

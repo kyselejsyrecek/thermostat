@@ -5,7 +5,7 @@
 #include "gui/element/temp_picker.h"
 
 /*
- * ThermostatScreen – layout handle for the main thermostat screen.
+ * SetTemperatureScreen – layout handle for the temperature set-point screen.
  *
  * Exposes all reactive subjects so that app logic can observe or drive the UI
  * without touching LVGL widgets directly:
@@ -19,8 +19,8 @@
 typedef struct {
     lv_obj_t  *root;
     TempPicker picker;
-} ThermostatScreen;
+} SetTemperatureScreen;
 
-/* Assemble the thermostat screen inside parent and return a pointer to the
- * static ThermostatScreen instance owned by this translation unit. */
-ThermostatScreen *thermostat_screen_create(lv_obj_t *parent);
+/* Assemble the set-temperature screen inside parent and return a pointer to
+ * the static SetTemperatureScreen instance owned by this translation unit. */
+SetTemperatureScreen *set_temperature_screen_create(lv_obj_t *parent);

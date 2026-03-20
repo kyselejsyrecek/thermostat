@@ -35,3 +35,8 @@ void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
 /* Update the label group to show the given temperature (tenths of °C, e.g.
  * 215 = 21.5 °C).  Must be called after gui_temp_labels_create. */
 void gui_temp_label_update(TempLabels *labels, int32_t tenths);
+
+/* Create a full-screen root object inside parent with all the common
+ * screen-root properties set (display size, no scroll, no border/padding).
+ * Used by every screen to avoid boilerplate duplication. */
+lv_obj_t *gui_screen_root_create(lv_obj_t *parent);

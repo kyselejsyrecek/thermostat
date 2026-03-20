@@ -2,9 +2,10 @@
 
 #include "config.h"
 #include "sensor/thermometer.h"
-#include "screen/thermostat.h"
-#include "screen/thermometer.h"
+#include "screen/set_temperature.h"
+#include "screen/main.h"
 
+#include "navigation.h"
 #include "ui.h"
 
 static UiHandle s_handle;
@@ -77,12 +78,19 @@ UiHandle *ui_init(void)
      * display.  The other block should remain commented out.
      * ─────────────────────────────────────────────────────────────────────── */
 
-    /* Thermostat screen (arc temperature picker + gradient background): */
-    //s_handle.thermostat = thermostat_screen_create(viewport);
+    /* Main screen (sensor read-out, black background): */
+    s_handle.thermometer  = thermometer_init();
+    s_handle.main_screen  = main_screen_create(viewport, s_handle.thermometer);
 
-    /* Thermometer screen (sensor read-out, black background): */
-    s_handle.thermometer        = thermometer_init();
-    s_handle.thermometer_screen = thermometer_screen_create(viewport, s_handle.thermometer);
+    /* Set-temperature screen (arc temperature picker + gradient background): */
+    s_handle.set_temperature = set_temperature_screen_create(viewport);
+
+    /* Navigation: main screen is default, set-temperature is reachable
+     * via gestures configured in config.h (UI_NAV_TO/FROM_SET_TEMPERATURE). */
+    navigation_init((lv_obj_t *[]){ s_handle.main_screen->root,
+                                    s_handle.set_temperature->root,
+                                    NULL
+                                  });
 
     return &s_handle;
 }

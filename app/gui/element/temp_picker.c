@@ -113,5 +113,8 @@ void temp_picker_create(lv_obj_t *parent, TempPicker *out)
     lv_obj_set_style_shadow_offset_y(arc, 5, LV_PART_KNOB);
 
     out->arc = arc;
+    /* Enable advanced hit-testing so clicks in the arc centre area fall
+     * through to the parent screen root (needed for nav double-tap gesture). */
+    lv_obj_add_flag(arc, LV_OBJ_FLAG_ADV_HITTEST);
     labels_create(arc, out);
 }

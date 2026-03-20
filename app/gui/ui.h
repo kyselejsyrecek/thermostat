@@ -3,8 +3,8 @@
 #include "lvgl.h"
 
 #include "sensor/thermometer.h"
-#include "screen/thermostat.h"
-#include "screen/thermometer.h"
+#include "screen/set_temperature.h"
+#include "screen/main.h"
 
 /*
  * UiHandle – top-level handle returned by ui_init().
@@ -15,15 +15,15 @@
  *   UiHandle *ui = ui_init();
  *
  *   // Observe the user's temperature selection:
- *   lv_subject_add_observer(&ui->thermostat->picker.value, my_cb, NULL);
+ *   lv_subject_add_observer(&ui->set_temperature->picker.value, my_cb, NULL);
  *
  *   // Read the current sensor value:
  *   lv_subject_get_int(&ui->thermometer->value);
  */
 typedef struct {
-    ThermostatScreen   *thermostat;
-    ThermometerScreen  *thermometer_screen;
-    Thermometer        *thermometer;
+    SetTemperatureScreen *set_temperature;
+    MainScreen           *main_screen;
+    Thermometer          *thermometer;
 } UiHandle;
 
 /* Initialise the GUI.  Creates the circular viewport, mounts the active

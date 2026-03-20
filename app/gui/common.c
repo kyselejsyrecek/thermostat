@@ -168,3 +168,15 @@ void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
     lv_obj_center(out->int_lbl);
 #endif
 }
+
+lv_obj_t *gui_screen_root_create(lv_obj_t *parent)
+{
+    lv_obj_t *root = lv_obj_create(parent);
+    lv_obj_set_size(root, UI_DISPLAY_WIDTH, UI_DISPLAY_HEIGHT);
+    lv_obj_set_pos(root, 0, 0);
+    lv_obj_set_style_radius(root, 0, 0);
+    lv_obj_set_style_border_width(root, 0, 0);
+    lv_obj_set_style_pad_all(root, 0, 0);
+    lv_obj_remove_flag(root, LV_OBJ_FLAG_SCROLLABLE);
+    return root;
+}
