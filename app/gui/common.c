@@ -79,7 +79,7 @@ void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
 #if UI_TEMP_CENTER_EXACT
     /* Single label – measure the widest string over the configured range. */
     int32_t label_w = 0;
-    for(int t = UI_TEMP_MIN; t <= UI_TEMP_MAX; t++) {
+    for(int t = UI_TEMP_MIN / 10; t <= UI_TEMP_MAX / 10; t++) {
         char buf[24];
 #  if UI_TEMP_ENABLE_DECIMALS
         for(int d = 0; d <= 9; d++) {
@@ -101,7 +101,7 @@ void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
     lv_obj_center(out->int_lbl);
 
 #elif UI_TEMP_ENABLE_DECIMALS
-    int32_t int_w = gui_max_int_part_width(UI_TEMP_MIN, UI_TEMP_MAX);
+    int32_t int_w = gui_max_int_part_width(UI_TEMP_MIN / 10, UI_TEMP_MAX / 10);
 
 #  if UI_TEMP_FIXED_UNIT
     /* Three-label layout: [ integer | ,X | °C ]
@@ -156,7 +156,7 @@ void gui_temp_labels_create(lv_obj_t *parent, TempLabels *out, lv_color_t color)
 #else /* !UI_TEMP_CENTER_EXACT && !UI_TEMP_ENABLE_DECIMALS */
     /* Single right-aligned label; whole degrees only. */
     int32_t label_w = 0;
-    for(int t = UI_TEMP_MIN; t <= UI_TEMP_MAX; t++) {
+    for(int t = UI_TEMP_MIN / 10; t <= UI_TEMP_MAX / 10; t++) {
         char buf[16];
         lv_snprintf(buf, sizeof(buf), "%d \xc2\xb0" "C", t);
         lv_point_t sz;
