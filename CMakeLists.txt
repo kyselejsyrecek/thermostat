@@ -65,12 +65,25 @@ target_link_libraries(thermostat
     ${PLATFORM_LIBRARIES}
 )
 
-# LTO (link-time optimization) — works with GCC, Clang and cross-compilers
-check_ipo_supported(RESULT ipo_supported)
-if(ipo_supported)
+# ── Per-platform compiler and linker flags ────────────────────────────────────
+# Common to all platforms: LTO, dead-code elimination.
+# Linux adds debug info (-ggdb) and size-with-debug optimisation (-Og).
+# Embedded targets (ESP32, STM32) use full size optimisation (-Os).
+
+# IPO/LTO — let CMake pick the right mechanism for the active compiler/linker
+check_ipo_supported(RESULT _ipo_ok)
+if(_ipo_ok)
     set_property(TARGET thermostat PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-# Dead-code elimination — remove unused functions and data
-target_compile_options(thermostat PRIVATE -ffunction-sections -fdata-sections)
-target_link_options(thermostat PRIVATE -Wl,--gc-sections)
+# Dead-code elimination + per-platform optimisation level
+set(_COMMON_COMPILE -ffunction-sections -fdata-sections)
+set(_COMMON_LINK    -Wl,--gc-sections)
+
+if(PLATFORM STREQUAL "linux")
+    target_compile_options(thermostat PRIVATE -Og -ggdb ${_COMMON_COMPILE})
+    target_link_options(thermostat    PRIVATE           ${_COMMON_LINK})
+else()   # esp32, stm32
+    target_compile_options(thermostat PRIVATE -Os        ${_COMMON_COMPILE})
+    target_link_options(thermostat    PRIVATE           ${_COMMON_LINK})
+endif()
