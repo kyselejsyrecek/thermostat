@@ -91,6 +91,7 @@ UiHandle *ui_init(void)
                                     s_handle.set_temperature->root,
                                     NULL
                                   });
+    navigation_add_drag_guard(s_handle.set_temperature->picker.arc);
 
     return &s_handle;
 }

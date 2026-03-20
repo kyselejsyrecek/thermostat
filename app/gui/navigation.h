@@ -29,3 +29,10 @@
  * off-screen to the right.  Navigation cycles through screens in order,
  * wrapping around. */
 void navigation_init(lv_obj_t *screens[]);
+
+/* Register an object that will have LV_OBJ_FLAG_CLICKABLE removed for the
+ * entire duration of a swipe drag and the subsequent snap animation, and
+ * restored when the navigation returns to idle.  Must be called after
+ * navigation_init.  Typical use: pass the arc widget of the temp picker so
+ * it cannot be adjusted while the user is swiping between screens. */
+void navigation_add_drag_guard(lv_obj_t *obj);

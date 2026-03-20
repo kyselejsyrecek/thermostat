@@ -40,6 +40,9 @@ typedef struct {
 
     uint8_t      anim_pending;  /* number of running lv_anim instances     */
     uint8_t      anim_next;     /* target screen index for the running anim */
+
+    lv_obj_t   *drag_guards[NAV_SCREENS_MAX]; /* objects frozen during swipe  */
+    uint8_t     drag_guard_count;
 } NavigationState;
 
 static NavigationState s_nav;
@@ -74,6 +77,18 @@ static inline uint32_t dir_to_flag(lv_dir_t d)
     return UI_NAV_SWIPE_DOWN;
 }
 
+static void guards_freeze(void)
+{
+    for(uint8_t i = 0; i < s_nav.drag_guard_count; i++)
+        lv_obj_remove_flag(s_nav.drag_guards[i], LV_OBJ_FLAG_CLICKABLE);
+}
+
+static void guards_unfreeze(void)
+{
+    for(uint8_t i = 0; i < s_nav.drag_guard_count; i++)
+        lv_obj_add_flag(s_nav.drag_guards[i], LV_OBJ_FLAG_CLICKABLE);
+}
+
 /* ── Animation ────────────────────────────────────────────────────────────── */
 
 static void anim_completed_cb(lv_anim_t *a)
@@ -95,6 +110,7 @@ static void anim_completed_cb(lv_anim_t *a)
     }
 
     s_nav.state          = NAV_IDLE;
+    guards_unfreeze();
     s_nav.drag_axis      = -1;
     s_nav.drag_dir_sign  = 0;
     s_nav.drag_attempted = false;
@@ -169,6 +185,7 @@ static void instant_transition(void)
     s_nav.anim_pending  = 0;
     s_nav.anim_next     = nxt;
     s_nav.state         = NAV_ANIMATING;
+    guards_freeze();
 
     launch_anim(cur_root(), 0, sign * dim, true);
     launch_anim(in, -sign * dim, 0, true);
@@ -253,6 +270,7 @@ static void on_pressing_cb(lv_event_t *e)
             else     lv_obj_set_y(cur_root(), 0);
             s_nav.drag_dir_sign = 0;
             s_nav.state = NAV_IDLE;
+            guards_unfreeze();
             return;
         }
 
@@ -263,6 +281,7 @@ static void on_pressing_cb(lv_event_t *e)
         lv_obj_clear_flag(in, LV_OBJ_FLAG_HIDDEN);
         s_nav.drag_dir_sign = new_sign;
         s_nav.state = NAV_DRAGGING;
+        guards_freeze();
     }
 
     s_nav.drag_offset = offset;
@@ -283,6 +302,7 @@ static void on_released_cb(lv_event_t *e)
 
     if(s_nav.state != NAV_DRAGGING) {
         s_nav.state = NAV_IDLE;
+        guards_unfreeze();
         return;
     }
 
@@ -329,6 +349,7 @@ static void on_long_pressed_cb(lv_event_t *e)
 
 void navigation_init(lv_obj_t *screens[])
 {
+    s_nav.drag_guard_count = 0;
     s_nav.screen_count  = 0;
     s_nav.current       = 0;
     s_nav.state         = NAV_IDLE;
@@ -369,4 +390,10 @@ void navigation_init(lv_obj_t *screens[])
                             LV_EVENT_LONG_PRESSED, &s_nav);
 #endif
     }
+}
+
+void navigation_add_drag_guard(lv_obj_t *obj)
+{
+    if(s_nav.drag_guard_count < NAV_SCREENS_MAX)
+        s_nav.drag_guards[s_nav.drag_guard_count++] = obj;
 }
