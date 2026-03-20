@@ -43,7 +43,8 @@ MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer,
     lv_obj_set_style_pad_all(group, 0, 0);
     lv_obj_set_style_border_width(group, 0, 0);
     lv_obj_set_style_bg_opa(group, LV_OPA_TRANSP, 0);
-    lv_obj_remove_flag(group, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(group, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(group, LV_OBJ_FLAG_EVENT_BUBBLE);
 
     /* Row for the measured (current) temperature. */
     lv_obj_t *row_curr = lv_obj_create(group);
@@ -52,7 +53,8 @@ MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer,
     lv_obj_set_style_pad_all(row_curr, 0, 0);
     lv_obj_set_style_border_width(row_curr, 0, 0);
     lv_obj_set_style_bg_opa(row_curr, LV_OPA_TRANSP, 0);
-    lv_obj_remove_flag(row_curr, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(row_curr, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(row_curr, LV_OBJ_FLAG_EVENT_BUBBLE);
 
     gui_temp_labels_create(row_curr, &s_screen.labels, UI_FG_COLOR, &UI_FONT_MAIN_TEMP);
 
@@ -63,7 +65,8 @@ MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer,
     lv_obj_set_style_pad_all(row_setp, 0, 0);
     lv_obj_set_style_border_width(row_setp, 0, 0);
     lv_obj_set_style_bg_opa(row_setp, LV_OPA_TRANSP, 0);
-    lv_obj_remove_flag(row_setp, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(row_setp, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(row_setp, LV_OBJ_FLAG_EVENT_BUBBLE);
 
     target_temp_create(row_setp, &s_screen.target_temp);
 
