@@ -15,5 +15,7 @@ void notification_bar_create(lv_obj_t *parent)
     lv_image_set_src(battery, &battery_charge_icon);
     lv_obj_set_style_image_recolor(battery, UI_FG_COLOR, 0);
     lv_obj_set_style_image_recolor_opa(battery, LV_OPA_COVER, 0);
-    lv_obj_align(battery, LV_ALIGN_TOP_MID, 0, LV_VER_RES * 14 / 17);
+    /* Position relative to the display area (UI_DISPLAY_HEIGHT), not LV_VER_RES,
+     * which in simulation equals the window height (display + margins). */
+    lv_obj_align(battery, LV_ALIGN_TOP_MID, 0, UI_DISPLAY_HEIGHT * 14 / 17);
 }

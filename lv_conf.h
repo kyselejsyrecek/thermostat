@@ -1531,6 +1531,40 @@
     #define LV_USE_DEMO_SMARTWATCH      0
 #endif /* LV_BUILD_DEMOS */
 
+/*==================
+   DISPLAY & SIMULATION
+ *==================*/
+
+/** Physical circular display dimensions (pixels).
+ *  Defined here once so that both the HAL (SDL window size) and the GUI code
+ *  (bounding-circle widget size) derive from the same source of truth. */
+#define UI_DISPLAY_WIDTH   360
+#define UI_DISPLAY_HEIGHT  360
+
+/** Define UI_SIMULATION when building for a desktop host so that the GUI can
+ *  show a decorative bezel ring that separates the circular display content
+ *  from the desktop background.  Extend the list of platforms as needed. */
+#ifdef PLATFORM_LINUX
+#  define UI_SIMULATION 1
+#endif
+
+/** Extra pixels added around each edge of the display in simulation to give
+ *  the bezel ring room to be fully visible.  Set to 0 to clip the ring at
+ *  the display boundary.  Must be >= 0.
+ *
+ *  The SDL window size is:
+ *    width  = UI_DISPLAY_WIDTH  + 2 * UI_SIM_MARGIN_H
+ *    height = UI_DISPLAY_HEIGHT + 2 * UI_SIM_MARGIN_V
+ *
+ *  Keep these values in sync with UI_SIM_BORDER_WIDTH in config.h. */
+#ifdef UI_SIMULATION
+#  define UI_SIM_MARGIN_H  35   /**< pixels added left and right */
+#  define UI_SIM_MARGIN_V  35   /**< pixels added top  and bottom */
+#else
+#  define UI_SIM_MARGIN_H  0
+#  define UI_SIM_MARGIN_V  0
+#endif
+
 /*--END OF LV_CONF_H--*/
 
 #endif /*LV_CONF_H*/

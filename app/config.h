@@ -92,3 +92,13 @@
  * updated only when the reading changes, so observers are not notified
  * unnecessarily. */
 #define THERMOMETER_INTERVAL_MS  15000u
+
+/* ── Simulation bezel ──────────────────────────────────────────────────────── */
+
+/* Width and colour of the ring drawn around the circular display boundary
+ * in simulation.  Keep UI_SIM_BORDER_WIDTH <= UI_SIM_MARGIN_H / UI_SIM_MARGIN_V
+ * (defined in lv_conf.h) so the ring is not clipped at the window edge. */
+#ifdef UI_SIMULATION
+#  define UI_SIM_BORDER_WIDTH  2
+#  define UI_SIM_BORDER_COLOR  lv_color_hex(0xFFFFFF)
+#endif
