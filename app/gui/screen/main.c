@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include "gui/common.h"
+#include "gui/element/notification_bar.h"
 #include "sensor/thermometer.h"
 
 #include "main.h"
@@ -33,6 +34,8 @@ MainScreen *main_screen_create(lv_obj_t *parent, Thermometer *thermometer)
      * deleted (lifetime tied to the parent widget). */
     lv_subject_add_observer_obj(&thermometer->value, thermometer_observer_cb,
                                 s_screen.labels.int_lbl, &s_screen);
+
+    notification_bar_create(root);
 
     return &s_screen;
 }
