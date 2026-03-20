@@ -202,7 +202,7 @@ static void on_pressing_cb(lv_event_t *e)
     int32_t dx = pt.x - s_nav.press_start.x;
     int32_t dy = pt.y - s_nav.press_start.y;
 
-    /* Determine axis on first movement beyond the scroll threshold. */
+    /* Determine axis on first movement beyond the axis-lock threshold. */
     if(s_nav.drag_axis < 0) {
         int32_t adx = dx < 0 ? -dx : dx;
         int32_t ady = dy < 0 ? -dy : dy;
@@ -212,37 +212,62 @@ static void on_pressing_cb(lv_event_t *e)
     }
 
     int32_t offset = (s_nav.drag_axis == 0) ? dx : dy;
+    int32_t dim    = (s_nav.drag_axis == 0) ? UI_DISPLAY_WIDTH : UI_DISPLAY_HEIGHT;
+    bool    is_x   = (s_nav.drag_axis == 0);
 
-    /* On first movement: verify the direction is in the active mask. */
-    if(s_nav.drag_dir_sign == 0) {
-        if(offset == 0) return;
+    /* When the finger returns to the press origin, hide the incoming screen
+     * and reset direction so the next movement re-evaluates cleanly. */
+    if(offset == 0) {
+        if(s_nav.drag_dir_sign != 0) {
+            lv_obj_t *in = nxt_root();
+            lv_obj_add_flag(in, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_set_pos(in, 0, 0);
+            s_nav.drag_dir_sign = 0;
+        }
+        if(is_x) lv_obj_set_x(cur_root(), 0);
+        else     lv_obj_set_y(cur_root(), 0);
+        s_nav.drag_offset = 0;
+        return;
+    }
 
-        int8_t sign = (offset > 0) ? 1 : -1;
+    int8_t new_sign = (offset > 0) ? 1 : -1;
+
+    /* On first movement or when the drag direction reverses: verify the new
+     * direction is enabled and (re-)position the incoming screen on the
+     * correct edge.  The repositioning happens while the incoming screen is
+     * still off-screen (|offset| is small at the moment of sign change), so
+     * no visual glitch occurs. */
+    if(s_nav.drag_dir_sign != new_sign) {
         lv_dir_t dir;
-        if(s_nav.drag_axis == 0) dir = (sign > 0) ? LV_DIR_RIGHT : LV_DIR_LEFT;
-        else                     dir = (sign > 0) ? LV_DIR_BOTTOM : LV_DIR_TOP;
+        if(is_x) dir = (new_sign > 0) ? LV_DIR_RIGHT : LV_DIR_LEFT;
+        else     dir = (new_sign > 0) ? LV_DIR_BOTTOM : LV_DIR_TOP;
 
         if(!(active_mask() & dir_to_flag(dir))) {
-            /* Direction not configured – ignore drag, wait for point event. */
+            /* New direction not configured – snap back and go idle. */
+            if(s_nav.drag_dir_sign != 0) {
+                lv_obj_t *in = nxt_root();
+                lv_obj_add_flag(in, LV_OBJ_FLAG_HIDDEN);
+                lv_obj_set_pos(in, 0, 0);
+            }
+            if(is_x) lv_obj_set_x(cur_root(), 0);
+            else     lv_obj_set_y(cur_root(), 0);
+            s_nav.drag_dir_sign = 0;
             s_nav.state = NAV_IDLE;
             return;
         }
 
-        /* Position incoming screen off the appropriate edge and show it. */
-        s_nav.drag_dir_sign = sign;
-        int32_t dim = (s_nav.drag_axis == 0) ? UI_DISPLAY_WIDTH : UI_DISPLAY_HEIGHT;
+        /* Place incoming screen on the correct edge and show it. */
         lv_obj_t *in = nxt_root();
-        if(s_nav.drag_axis == 0) lv_obj_set_pos(in, -sign * dim, 0);
-        else                     lv_obj_set_pos(in, 0, -sign * dim);
+        if(is_x) lv_obj_set_pos(in, -new_sign * dim, 0);
+        else     lv_obj_set_pos(in, 0, -new_sign * dim);
         lv_obj_clear_flag(in, LV_OBJ_FLAG_HIDDEN);
+        s_nav.drag_dir_sign = new_sign;
         s_nav.state = NAV_DRAGGING;
     }
 
     s_nav.drag_offset = offset;
 
     /* Move both screens together with the finger. */
-    int32_t dim  = (s_nav.drag_axis == 0) ? UI_DISPLAY_WIDTH : UI_DISPLAY_HEIGHT;
-    bool    is_x = (s_nav.drag_axis == 0);
     if(is_x) {
         lv_obj_set_x(cur_root(), offset);
         lv_obj_set_x(nxt_root(), offset - s_nav.drag_dir_sign * dim);
