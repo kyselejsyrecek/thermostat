@@ -91,6 +91,9 @@ UiHandle *ui_init(void)
                                     s_handle.set_temperature->root,
                                     NULL
                                   });
+    /* Main screen is the "cover": it slides over the set-temperature screen,
+     * which stays fixed at its final position (0,0) during transitions. */
+    navigation_set_layer(s_handle.main_screen->root, 1);
     navigation_add_drag_guard(s_handle.set_temperature->picker.arc);
 
     return &s_handle;

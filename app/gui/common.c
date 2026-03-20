@@ -174,7 +174,8 @@ lv_obj_t *gui_screen_root_create(lv_obj_t *parent)
     lv_obj_t *root = lv_obj_create(parent);
     lv_obj_set_size(root, UI_DISPLAY_WIDTH, UI_DISPLAY_HEIGHT);
     lv_obj_set_pos(root, 0, 0);
-    lv_obj_set_style_radius(root, 0, 0);
+    lv_obj_set_style_radius(root, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_clip_corner(root, true, 0);
     lv_obj_set_style_border_width(root, 0, 0);
     lv_obj_set_style_pad_all(root, 0, 0);
     lv_obj_remove_flag(root, LV_OBJ_FLAG_SCROLLABLE);

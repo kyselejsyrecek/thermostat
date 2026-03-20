@@ -36,3 +36,10 @@ void navigation_init(lv_obj_t *screens[]);
  * navigation_init.  Typical use: pass the arc widget of the temp picker so
  * it cannot be adjusted while the user is swiping between screens. */
 void navigation_add_drag_guard(lv_obj_t *obj);
+
+/* Assign a z-order layer to a registered screen root.  The screen with the
+ * higher layer value is the "cover": during transitions it slides over or
+ * away from the other screen, which stays fixed at its final position (0,0).
+ * Screens with the same layer fall back to the current-screen-moves behaviour.
+ * Call after navigation_init(); default layer for all screens is 0. */
+void navigation_set_layer(lv_obj_t *screen, int8_t layer);

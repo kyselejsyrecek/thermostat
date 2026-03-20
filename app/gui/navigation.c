@@ -41,6 +41,9 @@ typedef struct {
     uint8_t      anim_pending;  /* number of running lv_anim instances     */
     uint8_t      anim_next;     /* target screen index for the running anim */
 
+    uint8_t      cover_idx;     /* which of current/next is the cover (slides) */
+    int8_t       layers[NAV_SCREENS_MAX]; /* z-order per screen; higher = in front */
+
     lv_obj_t   *drag_guards[NAV_SCREENS_MAX]; /* objects frozen during swipe  */
     uint8_t     drag_guard_count;
 } NavigationState;
@@ -137,48 +140,55 @@ static void launch_anim(lv_obj_t *obj, int32_t start, int32_t end, bool is_x)
     s_nav.anim_pending++;
 }
 
-/* Finish a swipe: outgoing exits, incoming centres. */
+/* Finish a swipe: only the cover screen animates to its final position.
+ * The base screen is already at (0,0) and stays there. */
 static void complete_transition(void)
 {
-    bool     is_x = (s_nav.drag_axis == 0);
-    int32_t  dim  = is_x ? UI_DISPLAY_WIDTH : UI_DISPLAY_HEIGHT;
-    lv_obj_t *out = cur_root();
-    lv_obj_t *in  = nxt_root();
-    int32_t   in_pos = is_x ? lv_obj_get_x(in) : lv_obj_get_y(in);
+    bool    is_x = (s_nav.drag_axis == 0);
+    int32_t dim  = is_x ? UI_DISPLAY_WIDTH : UI_DISPLAY_HEIGHT;
 
     s_nav.anim_next = next_screen();
     s_nav.state     = NAV_ANIMATING;
-    launch_anim(out, s_nav.drag_offset, s_nav.drag_dir_sign * dim, is_x);
-    launch_anim(in,  in_pos, 0, is_x);
+
+    lv_obj_t *cover   = s_nav.screens[s_nav.cover_idx];
+    int32_t   cur_pos = is_x ? lv_obj_get_x(cover) : lv_obj_get_y(cover);
+    /* Cover exits if it was current; settles at centre if it was incoming. */
+    int32_t   end_pos = (s_nav.cover_idx == s_nav.current)
+                        ?  s_nav.drag_dir_sign * dim
+                        :  0;
+    launch_anim(cover, cur_pos, end_pos, is_x);
 }
 
-/* Snap back: both screens return to their original positions. */
+/* Snap back: only the cover returns to its off-screen resting position.
+ * The base screen stays at (0,0) unchanged. */
 static void cancel_transition(void)
 {
-    bool     is_x = (s_nav.drag_axis == 0);
-    int32_t  dim  = is_x ? UI_DISPLAY_WIDTH : UI_DISPLAY_HEIGHT;
-    lv_obj_t *out = cur_root();
-    lv_obj_t *in  = nxt_root();
-    int32_t   in_pos = is_x ? lv_obj_get_x(in) : lv_obj_get_y(in);
+    bool    is_x = (s_nav.drag_axis == 0);
+    int32_t dim  = is_x ? UI_DISPLAY_WIDTH : UI_DISPLAY_HEIGHT;
 
     s_nav.anim_next = s_nav.current;
     s_nav.state     = NAV_ANIMATING;
-    launch_anim(out, s_nav.drag_offset, 0, is_x);
-    launch_anim(in,  in_pos, -s_nav.drag_dir_sign * dim, is_x);
+
+    lv_obj_t *cover   = s_nav.screens[s_nav.cover_idx];
+    int32_t   cur_pos = is_x ? lv_obj_get_x(cover) : lv_obj_get_y(cover);
+    /* Cover returns to centre if it was current; exits if it was incoming. */
+    int32_t   end_pos = (s_nav.cover_idx == s_nav.current)
+                        ?  0
+                        : -s_nav.drag_dir_sign * dim;
+    launch_anim(cover, cur_pos, end_pos, is_x);
 }
 
 /* Navigate without drag (tap / double-tap / long-press): horizontal slide.
- * Going to a higher screen index slides left; returning slides right. */
+ * Going to a higher screen index slides left; returning slides right.
+ * Only the cover screen moves; the base stays fixed at (0,0). */
 static void instant_transition(void)
 {
     uint8_t nxt  = next_screen();
     int8_t  sign = (nxt > s_nav.current) ? -1 : 1;
     int32_t dim  = UI_DISPLAY_WIDTH;
-    lv_obj_t *in = nxt_root();
 
-    lv_obj_set_pos(in, -sign * dim, 0);
-    lv_obj_clear_flag(in, LV_OBJ_FLAG_HIDDEN);
-
+    s_nav.cover_idx     = (s_nav.layers[s_nav.current] >= s_nav.layers[nxt])
+                          ? s_nav.current : nxt;
     s_nav.drag_offset   = 0;
     s_nav.drag_axis     = 0;
     s_nav.drag_dir_sign = sign;
@@ -187,8 +197,20 @@ static void instant_transition(void)
     s_nav.state         = NAV_ANIMATING;
     guards_freeze();
 
-    launch_anim(cur_root(), 0, sign * dim, true);
-    launch_anim(in, -sign * dim, 0, true);
+    lv_obj_t *cover = s_nav.screens[s_nav.cover_idx];
+    if(s_nav.cover_idx == s_nav.current) {
+        /* Cover (current) slides off; reveal base (next) underneath. */
+        lv_obj_set_pos(nxt_root(), 0, 0);
+        lv_obj_clear_flag(nxt_root(), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_move_to_index(cover, -1);
+        launch_anim(cover, 0, sign * dim, true);
+    } else {
+        /* Cover (next) slides in from edge; base (current) stays put. */
+        lv_obj_set_pos(cover, -sign * dim, 0);
+        lv_obj_clear_flag(cover, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_move_to_index(cover, -1);
+        launch_anim(cover, -sign * dim, 0, true);
+    }
 }
 
 /* ── Touch event handlers ─────────────────────────────────────────────────── */
@@ -274,11 +296,22 @@ static void on_pressing_cb(lv_event_t *e)
             return;
         }
 
-        /* Place incoming screen on the correct edge and show it. */
-        lv_obj_t *in = nxt_root();
-        if(is_x) lv_obj_set_pos(in, -new_sign * dim, 0);
-        else     lv_obj_set_pos(in, 0, -new_sign * dim);
-        lv_obj_clear_flag(in, LV_OBJ_FLAG_HIDDEN);
+        /* Determine which screen is the cover (moves) and which is the base (fixed). */
+        uint8_t nxt = next_screen();
+        s_nav.cover_idx = (s_nav.layers[s_nav.current] >= s_nav.layers[nxt])
+                          ? s_nav.current : nxt;
+        lv_obj_t *cover = s_nav.screens[s_nav.cover_idx];
+        if(s_nav.cover_idx == nxt) {
+            /* Cover is the incoming screen: position it at the correct edge. */
+            if(is_x) lv_obj_set_pos(cover, -new_sign * dim, 0);
+            else     lv_obj_set_pos(cover, 0, -new_sign * dim);
+            lv_obj_clear_flag(cover, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            /* Cover is current: reveal the base (next) fixed at (0,0). */
+            lv_obj_set_pos(nxt_root(), 0, 0);
+            lv_obj_clear_flag(nxt_root(), LV_OBJ_FLAG_HIDDEN);
+        }
+        lv_obj_move_to_index(cover, -1);   /* cover always rendered on top */
         s_nav.drag_dir_sign = new_sign;
         s_nav.state = NAV_DRAGGING;
         guards_freeze();
@@ -286,14 +319,14 @@ static void on_pressing_cb(lv_event_t *e)
 
     s_nav.drag_offset = offset;
 
-    /* Move both screens together with the finger. */
-    if(is_x) {
-        lv_obj_set_x(cur_root(), offset);
-        lv_obj_set_x(nxt_root(), offset - s_nav.drag_dir_sign * dim);
-    } else {
-        lv_obj_set_y(cur_root(), offset);
-        lv_obj_set_y(nxt_root(), offset - s_nav.drag_dir_sign * dim);
-    }
+    /* Move only the cover screen; the base stays fixed at (0,0). */
+    lv_obj_t *cover = s_nav.screens[s_nav.cover_idx];
+    if(is_x)
+        lv_obj_set_x(cover, (s_nav.cover_idx == s_nav.current)
+                     ? offset : offset - s_nav.drag_dir_sign * dim);
+    else
+        lv_obj_set_y(cover, (s_nav.cover_idx == s_nav.current)
+                     ? offset : offset - s_nav.drag_dir_sign * dim);
 }
 
 static void on_released_cb(lv_event_t *e)
@@ -356,12 +389,17 @@ void navigation_init(lv_obj_t *screens[])
     s_nav.drag_axis     = -1;
     s_nav.drag_dir_sign = 0;
     s_nav.anim_pending  = 0;
+    s_nav.cover_idx     = 0;
 
     /* Copy the NULL-terminated array into the NavigationState. */
     for(uint8_t i = 0; screens[i] != NULL && i < NAV_SCREENS_MAX; i++) {
         s_nav.screens[i] = screens[i];
         s_nav.screen_count++;
     }
+
+    /* Default all layers to 0; caller may override with navigation_set_layer(). */
+    for(uint8_t i = 0; i < s_nav.screen_count; i++)
+        s_nav.layers[i] = 0;
 
     /* Layout: screen[0] visible at (0,0); all others hidden to the right. */
     for(uint8_t i = 0; i < s_nav.screen_count; i++) {
@@ -396,4 +434,17 @@ void navigation_add_drag_guard(lv_obj_t *obj)
 {
     if(s_nav.drag_guard_count < NAV_SCREENS_MAX)
         s_nav.drag_guards[s_nav.drag_guard_count++] = obj;
+}
+
+/* Assign a z-order layer to a registered screen.  During any transition the
+ * screen with the higher layer is the "cover": it slides in/out above the
+ * other screen which stays fixed at (0,0).  Call after navigation_init(). */
+void navigation_set_layer(lv_obj_t *screen, int8_t layer)
+{
+    for(uint8_t i = 0; i < s_nav.screen_count; i++) {
+        if(s_nav.screens[i] == screen) {
+            s_nav.layers[i] = layer;
+            return;
+        }
+    }
 }
