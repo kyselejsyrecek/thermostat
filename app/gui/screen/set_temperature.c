@@ -26,8 +26,9 @@ void set_temperature_nav_transition_cb(lv_obj_t *from, lv_obj_t *to,
     (void)to;
     /* Only act when leaving this screen. */
     if(from != s_screen.root) return;
-    /* Double-tap = cancel: restore picker to the last saved value. */
-    if(gesture == NAV_GESTURE_DOUBLE_TAP) {
+    /* Double-tap = cancel: restore picker to the last saved value.
+     * Programmatic reset (sleep) is treated the same way. */
+    if(gesture == NAV_GESTURE_DOUBLE_TAP || gesture == NAV_GESTURE_RESET) {
         temp_picker_set_tenths(&s_screen.picker,
                                *(uint32_t *)settings_get(temperature));
         return;

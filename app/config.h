@@ -215,3 +215,33 @@ extern lv_font_t lv_font_montserrat_60;
 
 /* Pause between fade-out and next fade-in in the blink animation (ms). */
 #define UI_ANIM_BLINK_DELAY_MS  1500u
+
+/* ── Display ───────────────────────────────────────────────────────────────── */
+
+/* Default display brightness set by display_init() at startup (%). */
+#define DISPLAY_DEFAULT_BRIGHTNESS  100u
+
+/* ── Power management ──────────────────────────────────────────────────────── */
+
+/* How often the PM inactivity check timer fires during normal (active) operation (ms). */
+#define PM_TIMER_PERIOD_MS        1000u
+
+/* Faster poll interval used once the display starts dimming, to minimise the
+ * delay between user input and waking the display back up (ms). */
+#define PM_TIMER_PERIOD_FAST_MS    100u
+
+/* Time of continuous inactivity before the display brightness is halved (ms). */
+#define PM_INACTIVITY_TIMEOUT_MS 30000u
+
+/* How long the display stays dimmed before it is turned off completely (ms). */
+#define PM_DISPLAY_DIM_HOLD_MS    6000u
+
+/* Target brightness when the display enters the dim state, expressed as a
+ * percentage of the current app brightness (0–100). */
+#define PM_DISPLAY_DIM_AMOUNT       50u
+
+/* Duration of the brightness fade-out animation (active → dim and dim → 0) (ms). */
+#define PM_DISPLAY_FADE_OUT_MS     800u
+
+/* Duration of the brightness fade-in animation after waking the display (ms). */
+#define PM_DISPLAY_FADE_IN_MS      200u

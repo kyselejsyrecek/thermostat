@@ -54,8 +54,9 @@ typedef enum {
     NAV_GESTURE_SWIPE_UP,     /* committed drag toward top edge              */
     NAV_GESTURE_SWIPE_DOWN,   /* committed drag toward bottom edge           */
     NAV_GESTURE_TAP,          /* single tap                                  */
-    NAV_GESTURE_DOUBLE_TAP,   /* two quick taps (often means "cancel")      */
-    NAV_GESTURE_LONG_PRESS,   /* press held for LVGL long-press time        */
+    NAV_GESTURE_DOUBLE_TAP,   /* two quick taps (often means "cancel")       */
+    NAV_GESTURE_LONG_PRESS,   /* press held for LVGL long-press time         */
+    NAV_GESTURE_RESET,        /* programmatic reset to the first screen      */
 } nav_gesture_t;
 
 /* Transition-complete callback type.
@@ -73,3 +74,10 @@ typedef void (*nav_transition_cb_t)(lv_obj_t *from, lv_obj_t *to,
 /* Register a single global callback invoked at the end of every successful
  * screen transition.  Pass NULL to unregister.  Call after navigation_init(). */
 void navigation_set_transition_cb(nav_transition_cb_t cb);
+
+/* Instantly reset navigation to the first screen (index 0) without any
+ * animation.  Cancels any running transition, hides all screens except
+ * screens[0], and fires the transition callback with NAV_GESTURE_RESET if
+ * the active screen was not already screens[0].
+ * Safe to call at any time after navigation_init(). */
+void navigation_reset(void);

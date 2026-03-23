@@ -29,3 +29,6 @@ typedef struct {
  * The return value may be ignored if the app does not need programmatic
  * control of the UI. */
 UiHandle *ui_init(const IO *io);
+
+/* Instantly reset the UI to the main screen without animation. */
+void ui_sleep(void);

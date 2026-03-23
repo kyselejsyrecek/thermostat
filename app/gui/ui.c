@@ -94,3 +94,8 @@ UiHandle *ui_init(const IO *io)
 
     return &s_handle;
 }
+
+void ui_sleep(void)
+{
+    navigation_reset();
+}

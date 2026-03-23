@@ -472,3 +472,41 @@ void navigation_set_transition_cb(nav_transition_cb_t cb)
 {
     s_nav.transition_cb = cb;
 }
+
+void navigation_reset(void)
+{
+    /* Nothing to do if already on the first screen and idle. */
+    if(s_nav.current == 0 && s_nav.state == NAV_IDLE) return;
+
+    /* Cancel any animations currently running on any screen. */
+    for(uint8_t i = 0; i < s_nav.screen_count; i++)
+        lv_anim_delete(s_nav.screens[i], NULL);
+    s_nav.anim_pending = 0;
+
+    guards_unfreeze();
+
+    /* Place all screens at (0,0); show only screens[0]. */
+    for(uint8_t i = 0; i < s_nav.screen_count; i++) {
+        lv_obj_set_pos(s_nav.screens[i], 0, 0);
+        if(i == 0)
+            lv_obj_remove_flag(s_nav.screens[i], LV_OBJ_FLAG_HIDDEN);
+        else
+            lv_obj_add_flag(s_nav.screens[i], LV_OBJ_FLAG_HIDDEN);
+    }
+
+    lv_obj_t *prev_root = s_nav.screens[s_nav.current];
+    bool      was_away  = (s_nav.current != 0);
+
+    s_nav.current        = 0;
+    s_nav.state          = NAV_IDLE;
+    s_nav.drag_axis      = -1;
+    s_nav.drag_dir_sign  = 0;
+    s_nav.drag_attempted = false;
+    s_nav.anim_next      = 0;
+    s_nav.last_gesture   = NAV_GESTURE_RESET;
+
+    if(was_away && s_nav.transition_cb)
+        s_nav.transition_cb(prev_root, s_nav.screens[0], NAV_GESTURE_RESET);
+
+    s_nav.last_gesture = NAV_GESTURE_NONE;
+}

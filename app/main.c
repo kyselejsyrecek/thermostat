@@ -6,8 +6,10 @@
 #include "demos/lv_demos.h"
 
 #include "io/io.h"
+#include "io/display.h"
 #include "io/rtc.h"
 #include "gui/ui.h"
+#include "pm.h"
 
 int app_start();
 
@@ -20,13 +22,16 @@ void lvgl_live_preview_init(void)
 
 int app_start()
 {
+    display_init();
+
     IO io = {
         .thermometer = thermometer_init(),
         .battery     = battery_init(),
     };
     rtc_init();
 
-    // The real application UI.
+    pm_init();
+
     ui_init(&io);
 
 #ifndef LVGL_LIVE_PREVIEW
