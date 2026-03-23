@@ -4,6 +4,7 @@
 
 #include "sensor/thermometer.h"
 #include "sensor/battery.h"
+#include "sensor/rtc.h"
 #include "screen/set_temperature.h"
 #include "screen/main.h"
 

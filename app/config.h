@@ -155,6 +155,29 @@ extern lv_font_t lv_font_montserrat_60;
  * 10 = 1.0 (tight, visual knob only), 15 = 1.5 (default, comfortable fingertip). */
 #define UI_TEMP_PICKER_KNOB_HIT_SCALE  15
 
+/* ── RTC sensor ────────────────────────────────────────────────────────────── */
+
+/* Fast poll interval (ms) – active when at least one second callback is
+ * registered.  100 ms guarantees every second boundary is caught even
+ * when the LVGL tick drifts slightly. */
+#define RTC_POLL_INTERVAL_MS       100u
+
+/* Slow poll interval (ms) – active when no second callback is registered.
+ * Minute and date changes are still detected at this rate. */
+#define RTC_POLL_INTERVAL_SLOW_MS  1000u
+
+/* Maximum abbreviated timezone name length (including null terminator). */
+#define RTC_TZ_NAME_LEN            32
+
+/* Maximum number of callbacks per event type (second / minute / date). */
+#define RTC_MAX_CBS                4
+
+/* Detect DST transitions at runtime and update the cached tz_name and
+ * UTC offset accordingly.  DST transitions never change seconds (only hours
+ * or half-hours), so the fast poll interval is not required for DST – the
+ * slow timer always catches the transition together with the minute change. */
+#define RTC_DST_SUPPORT            1
+
 /* ── Battery sensor ────────────────────────────────────────────────────────── */
 
 /* How often the battery percentage is read (ms). */
