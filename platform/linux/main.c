@@ -4,6 +4,8 @@
 #include "drivers/sdl/lv_sdl_window.h"
 #include "drivers/sdl/lv_sdl_mouse.h"
 
+#include "io/display.h"
+
 void app_start(void);
 
 /* Clamp mouse coordinates to non-negative values before SDL delivers events
@@ -48,6 +50,10 @@ void hal_init(void)
     lv_sdl_window_create(UI_DISPLAY_WIDTH  + 2 * UI_SIM_MARGIN_H,
                          UI_DISPLAY_HEIGHT + 2 * UI_SIM_MARGIN_V);
     lv_sdl_mouse_create();
+
+    /* Display overlay must be created after the SDL window / LVGL display
+     * exists, so that lv_layer_sys() returns a valid object. */
+    hal_display_init();
 }
 
 int main(void)
