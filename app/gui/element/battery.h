@@ -2,7 +2,7 @@
 
 #include "lvgl.h"
 
-#include "sensor/battery.h"
+#include "io/battery.h"
 
 /*
  * BatteryElement – notification-bar element that reacts to Battery events.

@@ -4,7 +4,7 @@
 #include "gui/common.h"
 #include "gui/element/notification_bar.h"
 #include "gui/element/target_temp.h"
-#include "sensor/thermometer.h"
+#include "io/thermometer.h"
 
 #include "main.h"
 

@@ -2,7 +2,7 @@
 
 #include "lvgl.h"
 
-#include "sensor/battery.h"
+#include "io/battery.h"
 #include "gui/element/battery.h"
 
 /*

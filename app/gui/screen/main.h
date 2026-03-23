@@ -5,8 +5,8 @@
 #include "gui/common.h"
 #include "gui/element/notification_bar.h"
 #include "gui/element/target_temp.h"
-#include "sensor/thermometer.h"
-#include "sensor/battery.h"
+#include "io/thermometer.h"
+#include "io/battery.h"
 
 /*
  * MainScreen – read-only display of the current room temperature.
