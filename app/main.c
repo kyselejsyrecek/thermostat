@@ -5,6 +5,8 @@
 #include "examples/lv_examples.h"
 #include "demos/lv_demos.h"
 
+#include "io/io.h"
+#include "io/rtc.h"
 #include "gui/ui.h"
 
 int app_start();
@@ -18,18 +20,14 @@ void lvgl_live_preview_init(void)
 
 int app_start()
 {
-#if 0
-    /* Run the default demo */
-    /* To try a different demo or example, replace this with one of: */
-    /* - lv_demo_benchmark(); */
-    /* - lv_demo_stress(); */
-    /* - lv_example_label_1(); */
-    /* - etc. */
-    lv_demo_music();
-#endif
+    IO io = {
+        .thermometer = thermometer_init(),
+        .battery     = battery_init(),
+    };
+    rtc_init();
 
     // The real application UI.
-    ui_init();
+    ui_init(&io);
 
 #ifndef LVGL_LIVE_PREVIEW
     /* Periodically call the lv_task handler.

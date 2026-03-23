@@ -1,9 +1,7 @@
 #include "lvgl.h"
 
 #include "config.h"
-#include "io/thermometer.h"
-#include "io/battery.h"
-#include "io/rtc.h"
+#include "io/io.h"
 #include "screen/set_temperature.h"
 #include "screen/main.h"
 
@@ -71,21 +69,13 @@ static lv_obj_t *bouding_circle_create(void)
     return circle;
 }
 
-UiHandle *ui_init(void)
+UiHandle *ui_init(const IO *io)
 {
     lv_obj_t *viewport = bouding_circle_create();
 
-    /* ── Active screen ──────────────────────────────────────────────────────
-     * Uncomment exactly one of the blocks below to select the screen to
-     * display.  The other block should remain commented out.
-     * ─────────────────────────────────────────────────────────────────────── */
-
     /* Main screen (sensor read-out, black background): */
-    s_handle.thermometer  = thermometer_init();
-    s_handle.battery      = battery_init();
-    rtc_init();
-    s_handle.main_screen  = main_screen_create(viewport, s_handle.thermometer,
-                                               s_handle.battery);
+    s_handle.main_screen  = main_screen_create(viewport, io->thermometer,
+                                               io->battery);
 
     /* Set-temperature screen (arc temperature picker + gradient background): */
     s_handle.set_temperature = set_temperature_screen_create(viewport);
